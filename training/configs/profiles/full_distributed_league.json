@@ -1,0 +1,108 @@
+{
+  "profile_id": "full_distributed_league",
+  "description": "Full distributed league profile for high-memory multi-card training. Use for the complete four-map recurrent MAPPO self-play run.",
+  "hardware_class": {
+    "kind": "multi_card_high_memory_cluster",
+    "gpu_count_range": [2, 8],
+    "recommended_cpu_cores": [96, 256],
+    "recommended_ram_gb": [256, 1024],
+    "recommended_godot_workers": [256, 2048]
+  },
+  "launcher_defaults": {
+    "difficulty": "hard",
+    "seed": 50000,
+    "execute_sequentially": false,
+    "purpose": "full_self_play_league"
+  },
+  "algorithm": {
+    "name": "recurrent_mappo_full_league",
+    "shared_actor": true,
+    "centralized_critic": true,
+    "rollout_length": 512,
+    "recurrent_sequence_length": 64,
+    "minibatch_size": 8192,
+    "update_epochs": 4,
+    "mixed_precision": true,
+    "gradient_accumulation_steps": 1,
+    "model": {
+      "self_state_hidden_size": 256,
+      "entity_hidden_size": 256,
+      "attention_heads": 4,
+      "rnn": "GRU",
+      "rnn_hidden_size": 384,
+      "rnn_layers": 1,
+      "critic_hidden_size": 512,
+      "local_grid_cnn": true,
+      "local_grid_size": 21,
+      "local_grid_channels": [
+        "walls",
+        "hazards",
+        "pickups",
+        "projectiles",
+        "enemies",
+        "teammates",
+        "fog"
+      ]
+    },
+    "league": {
+      "archive_keep_checkpoints": 24,
+      "archive_sample_ratio": 0.35,
+      "scripted_sample_ratio_start": 0.20,
+      "scripted_sample_ratio_end": 0.05,
+      "exploitability_eval_interval_env_steps": 10000000
+    }
+  },
+  "stage_overrides": {
+    "01_foundation_combat": {
+      "target_env_steps": 20000000,
+      "scripted_smoke_matches": 128
+    },
+    "02_energy_discipline": {
+      "target_env_steps": 35000000,
+      "scripted_smoke_matches": 192
+    },
+    "03_cover_tactics": {
+      "target_env_steps": 50000000,
+      "scripted_smoke_matches": 256
+    },
+    "04_dungeon_mechanics": {
+      "target_env_steps": 45000000,
+      "scripted_smoke_matches": 320
+    },
+    "05_sky_city_mechanics": {
+      "target_env_steps": 50000000,
+      "scripted_smoke_matches": 320
+    },
+    "06_jungle_mechanics": {
+      "target_env_steps": 50000000,
+      "scripted_smoke_matches": 320
+    },
+    "07_mist_world_mechanics": {
+      "target_env_steps": 65000000,
+      "scripted_smoke_matches": 320
+    },
+    "08_mixed_ffa_league": {
+      "target_env_steps": 180000000,
+      "scripted_smoke_matches": 512
+    },
+    "09_team_2v2": {
+      "target_env_steps": 120000000,
+      "scripted_smoke_matches": 512
+    },
+    "10_human_eval_tuning": {
+      "target_env_steps": 30000000,
+      "scripted_smoke_matches": 256
+    }
+  },
+  "expected_result": {
+    "realistic": [
+      "Train full four-map league policy with recurrent memory and local grid CNN.",
+      "Run broad holdout evaluation and checkpoint league sampling.",
+      "Target stable scripted-hard dominance and human-evaluation readiness."
+    ],
+    "risk": [
+      "Godot worker IPC throughput may bottleneck before learner throughput.",
+      "High utilization depends on batching many workers and using a central learner."
+    ]
+  }
+}

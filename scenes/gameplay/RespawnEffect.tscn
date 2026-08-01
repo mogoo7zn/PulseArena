@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://pulsearena_respawn_effect"]
+
+[ext_resource type="Script" path="res://scripts/gameplay/simple_effect.gd" id="1_effect"]
+
+[node name="RespawnEffect" type="Node2D"]
+script = ExtResource("1_effect")
+effect_color = Color(0.901961, 0.658824, 0.360784, 1)

@@ -1,0 +1,55 @@
+{
+  "plan_id": "local_complete",
+  "profile_id": "local_constrained",
+  "description": "Local runnable plan for this workstation: full staged replay collection, local warm-start, and a short single-worker Godot step-IPC PPO phase.",
+  "collect": {
+    "stage": "all",
+    "record_replay": true,
+    "matches": null,
+    "seconds": null,
+    "seed": null
+  },
+  "behavior_clone": {
+    "enabled": true,
+    "replay_dir": "training/replays",
+    "output_dir": "training/runs/local_complete_bc",
+    "epochs": 80,
+    "batch_size": 1024,
+    "hidden": 256,
+    "lr": 0.0003,
+    "val_ratio": 0.2,
+    "seed": 20260627,
+    "max_samples": null,
+    "swanlab_mode": "local",
+    "swanlab_project": "pulsearena-local",
+    "run_name": "local_complete_bc"
+  },
+  "online_self_play": {
+    "enabled": true,
+    "backend": "godot_step_ipc",
+    "requires_step_ipc": false,
+    "stages": ["01_foundation_combat"],
+    "workers_to_benchmark": [1, 2, 4, 8, 12],
+    "checkpoint_dir": "training/checkpoints/local",
+    "league_archive": "training/checkpoints/local/archive.json",
+    "output_dir": "training/runs/local_online_ppo",
+    "map_id": "dungeon",
+    "mode": "ffa",
+    "agents": 2,
+    "seconds": 20,
+    "seed": 30000,
+    "rollout_steps": 128,
+    "total_env_steps": 2048,
+    "tick_skip": 4,
+    "swanlab_mode": "offline",
+    "ppo": {
+      "clip_ratio": 0.2,
+      "value_coef": 0.5,
+      "entropy_coef": 0.01,
+      "max_grad_norm": 0.5,
+      "target_kl": 0.03,
+      "save_every_env_steps": 250000,
+      "eval_every_env_steps": 250000
+    }
+  }
+}

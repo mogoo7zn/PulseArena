@@ -1,0 +1,37 @@
+{
+  "plan_id": "hybrid_tactical_local",
+  "profile_id": "local_constrained",
+  "description": "Local Hybrid Tactical v2 plan: collect protocol-v2 teacher replays and train high-level tactical heads.",
+  "collect": {
+    "stage": "all",
+    "record_replay": true,
+    "matches": null,
+    "seconds": null,
+    "seed": null,
+    "agent_controller": "hybrid",
+    "agent_model_id": "hybrid_tactical_v1"
+  },
+  "behavior_clone": {
+    "enabled": false
+  },
+  "tactical_behavior_clone": {
+    "enabled": true,
+    "replay_dir": "training/replays",
+    "output_dir": "training/runs/hybrid_tactical_bc",
+    "epochs": 40,
+    "batch_size": 1024,
+    "hidden": 192,
+    "lr": 0.0003,
+    "val_ratio": 0.2,
+    "seed": 20260708,
+    "max_samples": null,
+    "decision_key": "teacher_decision",
+    "swanlab_mode": "offline",
+    "swanlab_project": "pulsearena-hybrid-local",
+    "run_name": "hybrid_tactical_bc"
+  },
+  "online_self_play": {
+    "enabled": false,
+    "notes": "Tactical PPO/MAPPO is intentionally disabled until the v2 rollout objective is promoted from prototype to production training."
+  }
+}

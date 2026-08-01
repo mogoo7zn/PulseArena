@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="GameBalance" load_steps=2 format=3 uid="uid://pulsearena_default_balance"]
+
+[ext_resource type="Script" path="res://scripts/config/game_balance.gd" id="1_balance"]
+
+[resource]
+script = ExtResource("1_balance")
+map_size = Vector2(2160, 1215)
+time_limit = 90.0
+max_players = 4
+physics_hz = 60
+agent_decision_hz = 15
+agent_action_hold_frames = 4
+respawn_delay = 1.5
+respawn_protection = 1.0
+max_health = 100.0
+max_energy = 100.0
+move_speed = 260.0
+player_radius = 22.0
+energy_regen_per_second = 14.0
+projectile_damage = 20.0
+projectile_energy_cost = 12.0
+shoot_cooldown = 0.25
+projectile_speed = 850.0
+projectile_lifetime = 1.4
+projectile_radius = 7.0
+dash_distance = 130.0
+dash_duration = 0.16
+dash_cooldown = 2.5
+dash_energy_cost = 30.0
+dash_invincible_time = 0.08
+shield_duration = 0.5
+shield_absorb = 40.0
+shield_cooldown = 3.5
+shield_energy_cost = 25.0
+shield_move_slow = 0.25
+pickup_spawn_interval_min = 5.0
+pickup_spawn_interval_max = 8.0
+pickup_lifetime = 15.0
+pickup_max_active = 4
+pickup_spawn_radius = 32.0
+pickup_collect_radius = 44.0
+pickup_health_restore_ratio = 0.22
+pickup_shield_duration = 5.0
+pickup_shield_absorb = 45.0
+pickup_haste_duration = 4.0
+pickup_haste_speed_multiplier = 1.35
+pickup_haste_fire_rate_multiplier = 1.2
+pickup_pulse_radius = 330.0
+pickup_pulse_damage = 14.0
+pickup_pulse_count = 3
+pickup_pulse_interval = 0.5
+pickup_pulse_knockback = 210.0
+pickup_overcharge_duration = 5.0
+pickup_overcharge_damage_multiplier = 1.35
+pickup_overcharge_projectile_speed_multiplier = 1.1
+pickup_magnet_duration = 6.0
+pickup_magnet_radius = 280.0
+pickup_magnet_pull_speed = 520.0

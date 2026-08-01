@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "model_id": "local_online_ppo_20260627",
+  "kind": "actor_critic",
+  "legacy": true,
+  "compatibility": "raw_action_v1_only",
+  "incompatible_with_hybrid": true,
+  "default_eligible": false,
+  "checkpoint": "archive/legacy_raw_ai/runs/ppo_local/best_online_policy.pt",
+  "input_dim": 297,
+  "hidden": 128,
+  "rnn_hidden": 128,
+  "value_hidden": 256,
+  "button_thresholds": {
+    "shoot": 0.5,
+    "dash": 0.5,
+    "shield": 0.5
+  },
+  "metrics": {
+    "env_steps": 2048,
+    "updates": 4,
+    "best_rollout_reward": 5.0
+  },
+  "notes": "Short online PPO checkpoint. Keep for comparison, but do not use as default gameplay policy until PPO is warm-started and trained longer."
+}

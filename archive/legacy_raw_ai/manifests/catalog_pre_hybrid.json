@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "default_model_id": "ppo_20m_training_20260701",
+  "models": [
+    {
+      "model_id": "ppo_20m_training_20260701",
+      "label": "PPO 20M Training 0701",
+      "manifest": "archive/legacy_raw_ai/manifests/ppo_20m.json",
+      "kind": "actor_critic",
+      "checkpoint": "archive/legacy_raw_ai/checkpoints/ppo_20m.pt",
+      "description": "Server-trained July 1 PPO checkpoint. Added as the default model for playtesting; movement diagnostics do not show collapse, but aim diagnostics still show weak target alignment."
+    },
+    {
+      "model_id": "ppo_10m_policy_20260630",
+      "label": "PPO 10M Policy",
+      "manifest": "archive/legacy_raw_ai/manifests/ppo_10m.json",
+      "kind": "actor_critic",
+      "checkpoint": "archive/legacy_raw_ai/checkpoints/ppo_10m.pt",
+      "description": "Server-trained PPO 10M checkpoint. Real-observation diagnostics do not show movement collapse; default model for current playtesting."
+    },
+    {
+      "model_id": "full_league_8gpu_20260630",
+      "label": "Full League 8-GPU",
+      "manifest": "archive/legacy_raw_ai/manifests/ppo_400m.json",
+      "kind": "actor_critic",
+      "checkpoint": "archive/legacy_raw_ai/checkpoints/ppo_400m.pt",
+      "description": "Server-trained full distributed league model, 400031744 env steps. Diagnostics show action collapse; keep selectable for analysis, not default play."
+    },
+    {
+      "model_id": "local_complete_bc_20260627",
+      "label": "Local Complete BC",
+      "manifest": "archive/legacy_raw_ai/manifests/bc_local.json",
+      "kind": "behavior_policy",
+      "checkpoint": "archive/legacy_raw_ai/runs/bc_local/best_policy.pt",
+      "description": "Local behavior-cloning warm start model. Current default playable model until the full league policy is retrained."
+    },
+    {
+      "model_id": "local_online_ppo_20260627",
+      "label": "Local Short PPO",
+      "manifest": "archive/legacy_raw_ai/manifests/ppo_local.json",
+      "kind": "actor_critic",
+      "checkpoint": "archive/legacy_raw_ai/runs/ppo_local/best_online_policy.pt",
+      "description": "Short local online PPO comparison checkpoint."
+    }
+  ]
+}

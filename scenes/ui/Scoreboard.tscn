@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://pulsearena_scoreboard"]
+
+[ext_resource type="Script" path="res://scripts/ui/simple_page.gd" id="1_page"]
+
+[node name="Scoreboard" type="Control"]
+script = ExtResource("1_page")
+title = "Scoreboard"

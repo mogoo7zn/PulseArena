@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "model_id": "ppo_10m_policy_20260630",
+  "label": "PPO 10M Policy",
+  "kind": "actor_critic",
+  "legacy": true,
+  "compatibility": "raw_action_v1_only",
+  "incompatible_with_hybrid": true,
+  "default_eligible": false,
+  "checkpoint": "archive/legacy_raw_ai/checkpoints/ppo_10m.pt",
+  "input_dim": 297,
+  "hidden": 256,
+  "rnn_hidden": 384,
+  "value_hidden": 512,
+  "button_thresholds": {
+    "shoot": 0.5,
+    "dash": 0.5,
+    "shield": 0.5
+  },
+  "metrics": {
+    "env_steps": 10092544,
+    "updates": 77,
+    "total_env_steps": 10000000,
+    "controlled_agent_count": 1,
+    "original_warm_start_checkpoint": "training/runs/full_online_mappo_v2/ppo_5m_policy.pt",
+    "sha256": "DB542B0949C4CFD3E34A86661CF256FEFD62D0A3C8C97D6C536357FB28273868"
+  },
+  "notes": "Server-trained PPO 10M checkpoint from full_online_mappo_v2, trained on mixed FFA league with one controlled learner agent."
+}

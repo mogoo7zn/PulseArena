@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "model_id": "full_league_8gpu_20260630",
+  "label": "Full League 8-GPU",
+  "kind": "actor_critic",
+  "legacy": true,
+  "compatibility": "raw_action_v1_only",
+  "incompatible_with_hybrid": true,
+  "default_eligible": false,
+  "checkpoint": "archive/legacy_raw_ai/checkpoints/ppo_400m.pt",
+  "input_dim": 297,
+  "hidden": 256,
+  "rnn_hidden": 384,
+  "value_hidden": 512,
+  "button_thresholds": {
+    "shoot": 0.5,
+    "dash": 0.5,
+    "shield": 0.5
+  },
+  "metrics": {
+    "env_steps": 400031744,
+    "updates": 763,
+    "total_env_steps": 400000000,
+    "sha256": "0E628EDB32A963BE9574DF543EDD1653A2098FD03152C0BDD57CB04A51F415D4"
+  },
+  "notes": "Server-trained full distributed league actor-critic checkpoint migrated from root agent.pt."
+}

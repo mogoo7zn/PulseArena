@@ -1,0 +1,39 @@
+{
+  "version": 2,
+  "assumptions": {
+    "environment": "Godot CPU simulation and worker IPC are expected to bottleneck before learner throughput unless many workers are batched.",
+    "policy": "Shared recurrent actor. Full profile uses centralized critic and optional local-grid CNN.",
+    "rollout_length_local": 128,
+    "rollout_length_full": 512,
+    "total_full_target_env_steps": 400000000,
+    "mixed_precision": true
+  },
+  "profiles": [
+    {
+      "profile_id": "local_constrained",
+      "purpose": "Local smoke training, reward/observation debugging, and small recurrent policies.",
+      "hardware_class": "single local compute card, 8GB VRAM class",
+      "cpu": "12 logical threads detected",
+      "ram_gb": "Use available system memory for rollout storage and optimizer offload.",
+      "parallel_envs": "6-12 recommended, benchmark up to 16",
+      "expected_wall_time": "Useful for short smoke jobs immediately; multi-million-step local training depends on worker IPC throughput.",
+      "notes": "Can reduce VRAM pressure with CPU rollout storage, optimizer offload, smaller recurrent state, and gradient accumulation. This trades speed for capacity."
+    },
+    {
+      "profile_id": "full_distributed_league",
+      "purpose": "Complete four-map recurrent MAPPO self-play league.",
+      "hardware_class": "2-8 high-memory compute cards",
+      "cpu": "96-256 CPU cores recommended",
+      "ram_gb": "256-1024",
+      "parallel_envs": "256-2048",
+      "expected_wall_time": "Several days to around two weeks depending on worker throughput and card count.",
+      "notes": "Use this after the local profile validates observations, rewards, reset behavior, and evaluation gates."
+    }
+  ],
+  "recommendation": {
+    "start_here": "Run local_constrained smoke and worker throughput benchmarks first.",
+    "local_target": "Use local_constrained for stages 01-03 and single-map bug finding.",
+    "full_target": "Use full_distributed_league for final self-play league and human-evaluation-ready checkpoints.",
+    "first_benchmark": "Measure Godot env steps/sec at 1, 2, 4, 8, 12, and 16 local workers before deciding whether to raise model size."
+  }
+}

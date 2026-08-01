@@ -1,0 +1,106 @@
+{
+  "profile_id": "local_constrained",
+  "description": "Local constrained profile for the available single compute card. Use for smoke training, observation/reward debugging, and small recurrent policies.",
+  "hardware_class": {
+    "kind": "single_local_compute_card",
+    "vram_class_gb": 8,
+    "logical_cpu_threads": 12,
+    "recommended_godot_workers": [6, 12],
+    "max_godot_workers_to_benchmark": 16
+  },
+  "launcher_defaults": {
+    "difficulty": "hard",
+    "seed": 20000,
+    "execute_sequentially": true,
+    "purpose": "local_smoke_and_small_training"
+  },
+  "algorithm": {
+    "name": "recurrent_ppo_local",
+    "shared_actor": true,
+    "centralized_critic": false,
+    "rollout_length": 128,
+    "recurrent_sequence_length": 32,
+    "minibatch_size": 1024,
+    "update_epochs": 3,
+    "mixed_precision": true,
+    "gradient_accumulation_steps": 2,
+    "model": {
+      "self_state_hidden_size": 128,
+      "entity_hidden_size": 128,
+      "rnn": "GRU",
+      "rnn_hidden_size": 128,
+      "rnn_layers": 1,
+      "critic_hidden_size": 256,
+      "local_grid_cnn": false
+    },
+    "memory_tradeoffs": {
+      "rollout_storage_device": "cpu_pinned",
+      "optimizer_state_offload": "cpu",
+      "checkpoint_keep_last": 3,
+      "notes": "System memory can hold rollout buffers and optimizer state to reduce VRAM pressure. Model activations still consume VRAM, so throughput is lower than a high-memory multi-card learner."
+    }
+  },
+  "stage_overrides": {
+    "01_foundation_combat": {
+      "seconds": 20,
+      "scripted_smoke_matches": 2,
+      "target_env_steps": 3000000
+    },
+    "02_energy_discipline": {
+      "seconds": 30,
+      "scripted_smoke_matches": 2,
+      "target_env_steps": 5000000
+    },
+    "03_cover_tactics": {
+      "seconds": 30,
+      "scripted_smoke_matches": 4,
+      "target_env_steps": 8000000
+    },
+    "04_dungeon_mechanics": {
+      "seconds": 45,
+      "scripted_smoke_matches": 2,
+      "target_env_steps": 5000000
+    },
+    "05_sky_city_mechanics": {
+      "seconds": 45,
+      "scripted_smoke_matches": 2,
+      "target_env_steps": 5000000
+    },
+    "06_jungle_mechanics": {
+      "seconds": 45,
+      "scripted_smoke_matches": 2,
+      "target_env_steps": 5000000
+    },
+    "07_mist_world_mechanics": {
+      "seconds": 45,
+      "scripted_smoke_matches": 2,
+      "target_env_steps": 5000000
+    },
+    "08_mixed_ffa_league": {
+      "seconds": 60,
+      "scripted_smoke_matches": 4,
+      "target_env_steps": 12000000
+    },
+    "09_team_2v2": {
+      "seconds": 60,
+      "scripted_smoke_matches": 4,
+      "target_env_steps": 8000000
+    },
+    "10_human_eval_tuning": {
+      "seconds": 60,
+      "scripted_smoke_matches": 2,
+      "target_env_steps": 2000000
+    }
+  },
+  "expected_result": {
+    "realistic": [
+      "Validate local Godot headless training jobs.",
+      "Train small policies after worker IPC and PPO learner are connected.",
+      "Find reward, observation, and map-mechanic bugs cheaply."
+    ],
+    "not_realistic": [
+      "Fast full-course self-play league training.",
+      "Reliable four-map human-dominant policy without later high-memory multi-card training."
+    ]
+  }
+}

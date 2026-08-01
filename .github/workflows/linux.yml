@@ -1,0 +1,70 @@
+name: Linux
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: "4.7"
+  GODOT_TAG: "4.7-stable"
+  GODOT_TEMPLATE_VERSION: "4.7.stable"
+
+jobs:
+  static:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - run: python tests/smoke/static_project_check.py
+      - run: python -m compileall -q training
+      - run: python -m unittest tests.unit.test_web_preview_server tests.unit.test_web_preview_lifecycle tests.unit.test_web_preview_package -v
+      - run: bash -n tests/smoke/run_headless_smoke.sh scripts/linux/bootstrap.sh scripts/linux/export_linux.sh scripts/linux/export_web.sh scripts/linux/web_preview.sh
+
+  godot:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot and export templates
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/godot" "$RUNNER_TEMP/godot/export_templates" "$HOME/.local/share/godot/export_templates/${GODOT_TEMPLATE_VERSION}"
+          curl --fail --location --retry 3 \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_TAG}/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" \
+            --output "$RUNNER_TEMP/godot/godot.zip"
+          curl --fail --location --retry 3 \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_TAG}/Godot_v${GODOT_VERSION}-stable_export_templates.tpz" \
+            --output "$RUNNER_TEMP/godot/export_templates.tpz"
+          unzip -q "$RUNNER_TEMP/godot/godot.zip" -d "$RUNNER_TEMP/godot"
+          unzip -q "$RUNNER_TEMP/godot/export_templates.tpz" -d "$RUNNER_TEMP/godot/export_templates"
+          cp -a "$RUNNER_TEMP/godot/export_templates/templates/." "$HOME/.local/share/godot/export_templates/${GODOT_TEMPLATE_VERSION}/"
+          test -f "$HOME/.local/share/godot/export_templates/${GODOT_TEMPLATE_VERSION}/web_nothreads_release.zip"
+          chmod +x "$RUNNER_TEMP/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64"
+      - name: Run Godot smoke suite
+        env:
+          GODOT_BIN: ${{ runner.temp }}/godot/Godot_v${{ env.GODOT_VERSION }}-stable_linux.x86_64
+        run: bash tests/smoke/run_headless_smoke.sh
+      - name: Export Linux release
+        env:
+          GODOT_BIN: ${{ runner.temp }}/godot/Godot_v${{ env.GODOT_VERSION }}-stable_linux.x86_64
+        run: bash scripts/linux/export_linux.sh
+      - run: test -x build/linux/PulseArena.x86_64
+      - name: Export and verify loopback Web preview
+        env:
+          GODOT_BIN: ${{ runner.temp }}/godot/Godot_v${{ env.GODOT_VERSION }}-stable_linux.x86_64
+        run: |
+          set -euo pipefail
+          make web-export
+          make web-start
+          trap 'make web-stop || true' EXIT
+          make web-status
+          curl --noproxy '*' --fail --silent --show-error --head http://127.0.0.1:8080/ | grep -Fi 'Cross-Origin-Opener-Policy: same-origin'
+          curl --noproxy '*' --fail --silent --show-error --head http://127.0.0.1:8080/ | grep -Fi 'Cross-Origin-Embedder-Policy: require-corp'
+          ss -ltn 'sport = :8080' | grep -F '127.0.0.1:8080'
+          make web-stop
+          test ! -e test-results/web-preview/server.pid
+          trap - EXIT

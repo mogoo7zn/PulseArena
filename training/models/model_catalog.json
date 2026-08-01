@@ -1,0 +1,14 @@
+{
+  "schema_version": 3,
+  "default_model_id": "hybrid_tactical_v1",
+  "models": [
+    {
+      "model_id": "hybrid_tactical_v1",
+      "label": "Hybrid Tactical v1",
+      "manifest": "training/models/hybrid_tactical_v1_agent.json",
+      "kind": "hybrid_tactical_prior",
+      "protocol": 2,
+      "description": "Active protocol v2 tactical baseline. The model returns high-level decisions; Godot executes deterministic aim, fire gating, evasion, movement, and fallback logic."
+    }
+  ]
+}

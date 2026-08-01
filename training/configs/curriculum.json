@@ -1,0 +1,181 @@
+{
+  "version": 1,
+  "policy": "recurrent_mappo_shared_actor",
+  "default_godot_args": {
+    "seconds": 90,
+    "difficulty": "hard",
+    "record_replay": false
+  },
+  "stages": [
+    {
+      "id": "01_foundation_combat",
+      "title": "Foundation combat",
+      "purpose": "Learn movement, aiming, projectile avoidance, basic burst fire, death/respawn timing.",
+      "mode": "ffa",
+      "maps": ["dungeon"],
+      "agents": 2,
+      "seconds": 45,
+      "scripted_smoke_matches": 64,
+      "target_env_steps": 15000000,
+      "opponents": {"scripted": 0.80, "self_play_current": 0.20},
+      "success": {
+        "scripted_hard_win_rate": 0.65,
+        "mean_damage_per_death": 80,
+        "max_environment_death_rate": 0.08
+      }
+    },
+    {
+      "id": "02_energy_discipline",
+      "title": "Energy discipline",
+      "purpose": "Learn ammo-like energy budgeting: stop low-value shooting, recover energy behind cover, time dash/shield.",
+      "mode": "ffa",
+      "maps": ["dungeon"],
+      "agents": 2,
+      "seconds": 60,
+      "scripted_smoke_matches": 96,
+      "target_env_steps": 25000000,
+      "opponents": {"scripted": 0.55, "self_play_current": 0.30, "self_play_archive": 0.15},
+      "success": {
+        "min_damage_per_100_energy": 45,
+        "max_empty_fire_rate": 0.08,
+        "scripted_hard_win_rate": 0.72
+      }
+    },
+    {
+      "id": "03_cover_tactics",
+      "title": "Cover tactics",
+      "purpose": "Learn line-of-sight control, peek shooting, retreating through obstacles, and defensive cover use.",
+      "mode": "ffa",
+      "maps": ["dungeon", "sky_city"],
+      "agents": 2,
+      "seconds": 75,
+      "scripted_smoke_matches": 128,
+      "target_env_steps": 35000000,
+      "opponents": {"scripted": 0.45, "self_play_current": 0.35, "self_play_archive": 0.20},
+      "success": {
+        "scripted_hard_win_rate": 0.76,
+        "min_cover_survival_delta": 0.15,
+        "max_exposed_damage_taken_ratio": 0.55
+      }
+    },
+    {
+      "id": "04_dungeon_mechanics",
+      "title": "Dungeon mechanics",
+      "purpose": "Master cage-trap avoidance while still contesting resources and cover angles.",
+      "mode": "ffa",
+      "maps": ["dungeon"],
+      "agents": 4,
+      "seconds": 90,
+      "scripted_smoke_matches": 160,
+      "target_env_steps": 30000000,
+      "opponents": {"scripted": 0.35, "self_play_current": 0.40, "self_play_archive": 0.25},
+      "success": {
+        "max_trap_death_rate": 0.03,
+        "max_trap_damage_per_minute": 8,
+        "scripted_hard_top1_rate": 0.42
+      }
+    },
+    {
+      "id": "05_sky_city_mechanics",
+      "title": "Sky City mechanics",
+      "purpose": "Avoid moving blocker squeeze deaths and void pull zones while using dynamic cover.",
+      "mode": "ffa",
+      "maps": ["sky_city"],
+      "agents": 4,
+      "seconds": 90,
+      "scripted_smoke_matches": 160,
+      "target_env_steps": 35000000,
+      "opponents": {"scripted": 0.35, "self_play_current": 0.40, "self_play_archive": 0.25},
+      "success": {
+        "max_void_death_rate": 0.025,
+        "max_squeeze_death_rate": 0.015,
+        "scripted_hard_top1_rate": 0.40
+      }
+    },
+    {
+      "id": "06_jungle_mechanics",
+      "title": "Jungle mechanics",
+      "purpose": "Avoid swamp slows and snake melee threat, learn when neutral enemies can be used to zone opponents.",
+      "mode": "ffa",
+      "maps": ["jungle"],
+      "agents": 4,
+      "seconds": 90,
+      "scripted_smoke_matches": 160,
+      "target_env_steps": 35000000,
+      "opponents": {"scripted": 0.35, "self_play_current": 0.40, "self_play_archive": 0.25},
+      "success": {
+        "max_swamp_damage_per_minute": 10,
+        "max_snake_death_rate": 0.025,
+        "scripted_hard_top1_rate": 0.40
+      }
+    },
+    {
+      "id": "07_mist_world_mechanics",
+      "title": "Mist World mechanics",
+      "purpose": "Use recurrent memory under fog, infer last-seen enemies, and evaluate portal risk/reward.",
+      "mode": "ffa",
+      "maps": ["mist_world"],
+      "agents": 4,
+      "seconds": 90,
+      "scripted_smoke_matches": 160,
+      "target_env_steps": 45000000,
+      "opponents": {"scripted": 0.30, "self_play_current": 0.45, "self_play_archive": 0.25},
+      "success": {
+        "max_fog_death_rate": 0.08,
+        "min_portal_net_survival_delta": 0.02,
+        "scripted_hard_top1_rate": 0.38
+      }
+    },
+    {
+      "id": "08_mixed_ffa_league",
+      "title": "Mixed FFA league",
+      "purpose": "Train one shared policy across all four maps and stop map-specific overfitting.",
+      "mode": "ffa",
+      "maps": ["all"],
+      "agents": 4,
+      "seconds": 90,
+      "scripted_smoke_matches": 256,
+      "target_env_steps": 90000000,
+      "opponents": {"scripted": 0.20, "self_play_current": 0.45, "self_play_archive": 0.35},
+      "success": {
+        "min_per_map_scripted_hard_top1_rate": 0.40,
+        "max_per_map_environment_death_rate": 0.06,
+        "min_never_seen_seed_top2_rate": 0.68
+      }
+    },
+    {
+      "id": "09_team_2v2",
+      "title": "Team 2v2",
+      "purpose": "Learn teammate spacing, target focus, crossfire, and non-friendly-fire team tactics.",
+      "mode": "team_2v2",
+      "maps": ["all"],
+      "agents": 4,
+      "seconds": 90,
+      "scripted_smoke_matches": 256,
+      "target_env_steps": 70000000,
+      "opponents": {"scripted": 0.20, "self_play_current": 0.45, "self_play_archive": 0.35},
+      "success": {
+        "min_per_map_team_win_rate": 0.58,
+        "max_team_spacing_collapse_rate": 0.18,
+        "min_focus_fire_kill_share": 0.45
+      }
+    },
+    {
+      "id": "10_human_eval_tuning",
+      "title": "Human evaluation tuning",
+      "purpose": "Freeze core policy, evaluate against humans, and lightly fine-tune only if human exploits are repeatable.",
+      "mode": "ffa",
+      "maps": ["all"],
+      "agents": 4,
+      "seconds": 90,
+      "scripted_smoke_matches": 128,
+      "target_env_steps": 20000000,
+      "opponents": {"human_replay": 0.25, "self_play_current": 0.35, "self_play_archive": 0.40},
+      "success": {
+        "min_human_match_win_rate": 0.60,
+        "min_per_map_human_match_win_rate": 0.55,
+        "max_regression_vs_scripted_hard": 0.03
+      }
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "fixed_seed_sets": {
+    "dev": [1101, 1102, 1103, 1104, 1105, 1106, 1107, 1108],
+    "holdout": [9101, 9102, 9103, 9104, 9105, 9106, 9107, 9108, 9109, 9110, 9111, 9112]
+  },
+  "maps": ["dungeon", "sky_city", "jungle", "mist_world"],
+  "opponents": ["scripted_easy", "scripted_normal", "scripted_hard", "archive_policy", "current_self_play", "human"],
+  "modes": [
+    {
+      "id": "ffa_1v1",
+      "mode": "ffa",
+      "agents": 2,
+      "seconds": 90,
+      "required_metrics": [
+        "win_rate",
+        "damage_per_100_energy",
+        "empty_fire_rate",
+        "environment_death_rate",
+        "pickup_value_delta"
+      ]
+    },
+    {
+      "id": "ffa_4p",
+      "mode": "ffa",
+      "agents": 4,
+      "seconds": 90,
+      "required_metrics": [
+        "top1_rate",
+        "top2_rate",
+        "damage_per_death",
+        "environment_death_rate",
+        "per_map_rank"
+      ]
+    },
+    {
+      "id": "team_2v2",
+      "mode": "team_2v2",
+      "agents": 4,
+      "seconds": 90,
+      "required_metrics": [
+        "team_win_rate",
+        "focus_fire_share",
+        "teammate_spacing",
+        "crossfire_kill_share",
+        "environment_death_rate"
+      ]
+    }
+  ],
+  "promotion_gates": {
+    "scripted_hard_all_maps_min_win_rate_1v1": 0.72,
+    "scripted_hard_all_maps_min_top1_rate_ffa": 0.40,
+    "holdout_max_environment_death_rate": 0.06,
+    "holdout_max_empty_fire_rate": 0.10,
+    "human_eval_min_per_map_win_rate": 0.55
+  }
+}

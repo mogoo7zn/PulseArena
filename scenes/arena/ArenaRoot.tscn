@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://pulsearena_arena_root"]
+
+[ext_resource type="Script" path="res://scripts/arena/arena_root.gd" id="1_arena_root"]
+
+[node name="ArenaRoot" type="Node2D"]
+script = ExtResource("1_arena_root")

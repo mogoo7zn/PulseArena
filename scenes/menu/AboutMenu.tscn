@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://pulsearena_about_menu"]
+
+[ext_resource type="Script" path="res://scripts/ui/simple_page.gd" id="1_page"]
+
+[node name="AboutMenu" type="Control"]
+script = ExtResource("1_page")
+title = "About Pulse Arena"

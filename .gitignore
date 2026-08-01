@@ -1,0 +1,70 @@
+# Local Python environments
+.conda/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+training/local_settings.json
+
+# Godot and local tools
+.godot/
+.godot_user/
+.tools/
+.superpowers/
+training/godot_user/
+
+# Generated outputs
+dist/
+*.log
+logs/
+tmp/
+test-results/
+build/
+training/packages/
+
+# Training artifacts
+training/runs/
+training/swanlab/
+training/checkpoints/
+training/data_cache/
+training/eval_results/
+training/replays/*
+!training/replays/.gitkeep
+training/replays_decision/
+*.onnx
+*.pt
+*.pth
+*.ckpt
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.swanlab*
+
+# Archived generated artifacts
+archive/**/runs/
+archive/**/replays/
+archive/**/checkpoints/
+archive/**/packages/
+archive/**/*.log
+archive/**/*.import
+archive/**/*.png
+archive/**/*.swanlab*
+archive/**/*.translation
+
+# Editors and operating systems
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
