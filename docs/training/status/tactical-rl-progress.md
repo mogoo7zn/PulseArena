@@ -425,3 +425,103 @@ Python unit 14 个全部是 reorg 引发的路径错位（不是 03- §5 的修�
 **已知副作用**：`reserve_basis` / `reserve_ratio` 从 SAFE 白名单抹掉后，Python trainer 的 `reserved_energy_by_basis` 与 `map_reserved_energy_by_basis` 计数器将收到空 dict——意味着阶段 1 的硬门槛 #6 "reserve basis 至少 3 个非零" 未来跑新数据会失守。需要 follow-up plan：在 environment_bridge 里加 server-only diagnostic 通道（如 `tactical_diagnostics_private`），让 Python trainer 能读到但不发给 player。
 
 **Commit**：`4471753 fix(tests,protocol): stage 2 TDD follow-up after repository reorganization`（7 files / +15 / −20）。
+
+## 阶段 3：8 卡并行 pilot（按 04- §3.2）
+
+### GPU 等待
+
+启阶段 3 前查 GPU：8 张全被同用户的另一项目占满（`/data1/yanjie/diffusion/self-evolving-vlm/qwen-cc-opd/outputs/0816-sol/`，8 个 `train_qwen_cc_opd.py` 进程，`max_train_batches=90`，开始于 21:58，~78GB / 80GB 每张）。等它跑完—— Monitor `bg5hdmifr` 挂着。等了约 30 分钟 GPU 归零，进程结束。
+
+### 第一次启动失败（配置 bug）
+
+```
+[Errno 2] No such file or directory:
+  '/data/mogoo7zn/PulseArena/training.pipelines.train_pipeline'
+```
+
+所有 11 个 `training/configs/multi_gpu/*.json` 的 command 字段里 `{root}/training.pipelines.train_pipeline` 是 reorg 时改错的——点路径不是文件路径，Python 找不到。批量修复为 `{root}/training/pipelines/train_pipeline.py`：
+
+```bash
+for f in training/configs/multi_gpu/*.json; do
+  sed -i 's|{root}/training\.pipelines\.train_pipeline|{root}/training/pipelines/train_pipeline.py|g' "$f"
+done
+```
+
+修完 dry-run 正确（`/data/mogoo7zn/PulseArena/.conda/bin/python /data/mogoo7zn/PulseArena/training/pipelines/train_pipeline.py ...`），提交 `b5d2ca0 fix(configs): restore multi_gpu command path after train_pipeline move`（11 files）。
+
+### 第二次启动：8/8 worker returncode=0
+
+8 个 worker（GPU 0..7 / 端口 8870..8877 / 种子 20260801..20260808）跑 `hybrid_tactical_v2_ppo_pilot` 单 worker plan，每个 512 env_steps / 256 transitions / 4 update / 0 episodes（`01_foundation_combat` / dungeon，20 秒短局）。所有 8 个产物在 `training/artifacts/runs/hybrid_tactical_v2_8gpu_parallel_pilot/gpu{N}/`。
+
+**8 个 worker 数字（rollout_audit 汇总）**：
+
+| gpu | transitions | raw_step | fallback | dec_gen_consistent | fire_intent | fire_authorized | cover_entry / reengage |
+|---|---|---|---|---|---|---|---|
+| 0 | 256 | 0 | 28 | true | 232 | 0 | 16 / 7 |
+| 1 | 256 | 0 | 45 | true | 234 | 1 | 22 / 5 |
+| 2 | 256 | 0 | 25 | true | 237 | 0 | 16 / 10 |
+| 3 | 256 | 0 | 31 | true | 225 | 0 | 17 / 5 |
+| 4 | 256 | 0 | 34 | true | 229 | 0 | 18 / 3 |
+| 5 | 256 | 0 | 30 | true | 238 | 0 | 9 / 4 |
+| 6 | 256 | 0 | 34 | true | 224 | 0 | 13 / 5 |
+| 7 | 256 | 0 | 24 | true | 233 | 0 | 19 / 8 |
+
+✅ 8/8 worker `raw_step_calls=0`、`decision_generation_consistent=true`。
+
+### Import 8 个 candidate（fix ROOT 第二次）
+
+第一次 import 把 manifest 写到 `training/training/models/`（错的，doubled 路径）—— `training/server/import_trained_model.py` 同样有 `parents[1]` 应是 `parents[2]` 的 ROOT bug。批量修：
+
+```bash
+# 修 5 个脚本的 ROOT
+sed -i 's|parents\[1\]|parents[2]|' training/server/{import_trained_model,package_server_bundle,estimate_resources}.py
+sed -i 's|parents\[1\]|parents[2]|' training/pipelines/run_stage.py
+sed -i 's|parents\[1\]|parents[2]|' training/evaluation/evaluate_tactical_candidate.py
+```
+
+`baseline_audit.py:135` 同样有 ROOT bug，但用户决定"不动 audit"，保留作为 follow-up。
+
+修完 import 正确写到 `training/models/hybrid_tactical_v2_8gpu_gpu{N}_20260816_agent.json` + `training/checkpoints/hybrid/hybrid_tactical_v2_8gpu_gpu{N}_20260816.pt`。提交 `aeb8d04 fix(training): bump ROOT to parents[2] in 5 scripts after reorg`（5 files）。
+
+### Eval smoke（验证 eval pipeline）
+
+跑一个 eval（gpu0 candidate，30 秒一局）验证 pipeline 端到端：
+
+```bash
+PYTHONPATH=. MPLCONFIGDIR="$PWD/test-results/matplotlib" \
+.conda/bin/python training/evaluation/evaluate_tactical_candidate.py \
+    --manifest training/models/hybrid_tactical_v2_8gpu_gpu0_20260816_agent.json \
+    --output-dir training/artifacts/runs/evaluations/hybrid_tactical_v2_8gpu_gpu0_smoke_$(date +%Y%m%d) \
+    --godot "$PWD/.tools/godot-4.7.1/Godot_v4.7.1-stable_linux.x86_64" \
+    --runner godot-service \
+    --split dev \
+    --max-jobs 1 \
+    --seconds 30 \
+    --port-start 18970 \
+    --model-port-start 18980
+```
+
+结果：
+- `result: "fail"` —— `win_rate: 0.0`、`top1_rate: 0.0`、`scripted_hard_all_maps_win_rate_1v1: 0.0`
+- `gate_summary.failed`：scripted_hard_all_maps_min_win_rate_1v1 不达标
+- 但 `service_backed_match: 1.0`、`paired_baseline_match: 1.0`、`safety_override_rate: 0.0`、`matches_completed: 1.0` —— 链路本身通了
+- `fire_blocked_rate: 0.908`（全是 HOLD_FIRE，scripted teacher 极保守）
+
+**预期之内**：per-worker 计划 `hybrid_tactical_v2_ppo_pilot` 只跑 256 env_steps / 无 BC warm-start / 单 dungeon map，candidate 一定打不过 `hybrid_tactical_v1` baseline。foundation pilot 设计如此——plan §3.5 "8 个 candidate 全不过 gate → 回到阶段 1 重新跑 diagnostic"。
+
+### 阶段 3 验收门槛（按 04- §3.4）
+
+| 门槛 | 结果 |
+|---|---|
+| 8 worker 全部 `returncode=0` | ✅ |
+| 每 worker `raw_step_calls == 0` | ✅ |
+| 至少 1 candidate 通过 gate | ❌（8/8 fail） |
+| `model_catalog.json` 默认未自动变更 | ✅ 仍 `hybrid_tactical_v1` |
+
+**阶段 3 基础设施部分（multi_gpu orchestrator + protocol-v2 worker + eval pipeline）通过**——但 candidate promotion 需要回阶段 1 用更强的 plan（建议 `tactical_legal_window_pressure_four_map_ballistic_repair` 跑 8 次而非 foundation pilot），那是后续阶段的方向。
+
+### 阶段 3 顺手做的清理
+
+- 删 3938 `.pyc` + 589 `__pycache__/`（gitignored，自动再生）
+- 删错位 import 产物 `training/training/{models,checkpoints}/`
+- 删 test artifact `hybrid_tactical_v2_8gpu_gpu0_TEST{,_FIX}_*`
