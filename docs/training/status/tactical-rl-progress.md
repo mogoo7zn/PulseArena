@@ -371,3 +371,57 @@ PPO exit 0。`training/artifacts/runs/legal_window_pressure/ballistic_repair_gpu
 ### 阶段 1 产物备份
 
 按 02- §7：把这次数字 append 到 progress（已做）；run 目录保留在 `training/artifacts/runs/legal_window_pressure/ballistic_repair_gpu4/`（未改名——阶段 1 唯一一次跑，没有要回滚的版本）。
+
+### 阶段 2：复合修复 TDD（红→绿循环）
+
+按 03- §7 跑 5 组测试。
+
+**修复前（基线）**：
+
+| 组 | 结果 |
+|---|---|
+| 1a. Godot unit (`tests/run_tests.gd`) | ✅ PASS |
+| 1b. Static check (`static_project_check.py`) | ✅ PASS |
+| 2. Python unit (`tests/unit/`) | ❌ 14 个失败（8 fail + 6 error） |
+| 3. Protocol smoke (`tactical_training_protocol_check.py`) | ❌ FAIL——`reserve_basis` / `reserve_ratio` 触发 `PRIVATE_DIAGNOSTIC_TOKENS` |
+| 4a. test_tactical_ppo | ✅ PASS 7/7 |
+| 4b. CUDA micro-update | ✅ PASS |
+
+Python unit 14 个全部是 reorg 引发的路径错位（不是 03- §5 的修复方向组）：test_baseline_audit × 3、test_web_preview_lifecycle × 4、test_web_preview_server × 5、test_web_preview_package × 1、test_archive_pre_draw_fix_runs × 1。
+
+**用户决策**：
+- Python unit → 改测试文件 path（仅 path 变更，不动逻辑）。
+- Protocol smoke → 隐藏：从 diagnostics 抹掉（改 Godot 白名单）。
+
+**修复**：
+
+| 文件 | 改动 |
+|---|---|
+| `tests/unit/test_baseline_audit.py` | `training/core/encoding.py` → `training/encoding.py`（audit 期望的旧路径）；去掉 fixture 里的 `scripts/agents/hybrid` |
+| `tests/unit/test_web_preview_lifecycle.py` | `scripts/linux/web_preview.sh` → `scripts/ops/web_preview.sh` |
+| `tests/unit/test_web_preview_server.py` | `scripts/linux/web_preview_server.py` → `scripts/ops/web_preview_server.py` |
+| `tests/unit/test_web_preview_package.py` | `training/package_server_bundle.py` → `training/server/package_server_bundle.py` |
+| `tests/unit/test_archive_pre_draw_fix_runs.py` | fixture 从 `training/artifacts/runs/...` → `training/runs/...`（匹配 `archive_pre_draw_fix_runs.py:42` 的硬编码） |
+| `scripts/rl/environment_bridge.gd` | `SAFE_DIAGNOSTIC_FLOAT_FIELDS` 去掉 `reserve_ratio`；`SAFE_DIAGNOSTIC_STRING_FIELDS` 去掉 `reserve_basis` |
+| `tests/unit/tactical_training_protocol_test.gd` | 去掉 `_test_nested_private_diagnostics_are_removed` 里要求 reserve_basis/reserve_ratio 保留的断言（与新 policy 一致） |
+
+**修复后**：
+
+| 组 | 结果 |
+|---|---|
+| 1a. Godot unit | ✅ PASS |
+| 1b. Static check | ✅ PASS |
+| 2. Python unit | 🟡 80 pass / 5 fail（从 71/14 改善） |
+| 3. Protocol smoke | ✅ PASS |
+| 4a. test_tactical_ppo | ✅ PASS 7/7 |
+| 4b. CUDA micro | ✅ PASS |
+
+**5 个剩余 Python 失败**：
+- `test_baseline_audit.test_live_project_contract_passes` —— `baseline_audit.py:55-58` 仍硬编码读 `training/encoding.py`（已移到 `training/core/encoding/` 包）。用户决定"不动 baseline_audit" → 留作下一轮 TDD 专项。
+- `test_baseline_audit.test_cli_output_creates_parent_directory` —— 同上根因（对真实 ROOT 跑 audit）。
+- `test_web_preview_package.test_server_bundle_includes_discoverable_web_preview_entrypoints` —— `training/server/package_server_bundle.py` 打包白名单不包含 `scripts/ops/...`（packager 代码问题，不在"测试 path 改"范围）。
+- `test_web_preview_lifecycle.test_failed_start_preserves_state_replaced_by_another_process` + `test_start_rejects_an_occupied_port_even_when_it_returns_http_success` —— 单独跑 OK（6/6 ok）；与别的一起跑 flaky（端口占用 / PID 文件残留）；非 path 问题。
+
+**已知副作用**：`reserve_basis` / `reserve_ratio` 从 SAFE 白名单抹掉后，Python trainer 的 `reserved_energy_by_basis` 与 `map_reserved_energy_by_basis` 计数器将收到空 dict——意味着阶段 1 的硬门槛 #6 "reserve basis 至少 3 个非零" 未来跑新数据会失守。需要 follow-up plan：在 environment_bridge 里加 server-only diagnostic 通道（如 `tactical_diagnostics_private`），让 Python trainer 能读到但不发给 player。
+
+**Commit**：`4471753 fix(tests,protocol): stage 2 TDD follow-up after repository reorganization`（7 files / +15 / −20）。
