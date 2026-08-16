@@ -52,10 +52,11 @@ def build_report(root: Path) -> dict[str, Any]:
         except (OSError, ValueError) as error:
             failures.append(f"{key} invariant failed: {error}")
 
-    encoding_path = root / "training/encoding.py"
-    read_check("python_protocol", encoding_path, "HYBRID_PROTOCOL_VERSION")
-    read_check("python_feature_schema", encoding_path, "TACTICAL_FEATURE_SCHEMA_VERSION")
-    read_check("python_feature_dim", encoding_path, "TACTICAL_FEATURE_DIM")
+    encoding_observation_path = root / "training/core/encoding/observation.py"
+    encoding_tactical_path = root / "training/core/encoding/tactical.py"
+    read_check("python_protocol", encoding_observation_path, "HYBRID_PROTOCOL_VERSION")
+    read_check("python_feature_schema", encoding_observation_path, "TACTICAL_FEATURE_SCHEMA_VERSION")
+    read_check("python_feature_dim", encoding_tactical_path, "TACTICAL_FEATURE_DIM")
     read_check("godot_protocol", root / "scripts/agents/tactical_decision.gd", "PROTOCOL_VERSION")
     read_check("godot_feature_dim", root / "scripts/agents/tactical_feature_builder.gd", "FEATURE_DIM")
 
@@ -132,7 +133,7 @@ def _check_equals(failures: list[str], name: str, actual: Any, expected: Any) ->
 
 
 def main() -> int:
-    project_root = Path(__file__).resolve().parents[1]
+    project_root = Path(__file__).resolve().parents[2]
     parser = argparse.ArgumentParser(description="Audit the Hybrid Tactical v2 baseline contract.")
     parser.add_argument("--root", type=Path, default=project_root)
     parser.add_argument("--output", type=Path)
