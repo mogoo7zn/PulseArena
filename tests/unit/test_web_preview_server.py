@@ -11,7 +11,7 @@ from urllib.request import ProxyHandler, build_opener
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MODULE_PATH = ROOT / "scripts" / "linux" / "web_preview_server.py"
+MODULE_PATH = ROOT / "scripts" / "ops" / "web_preview_server.py"
 
 
 def load_module():

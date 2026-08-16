@@ -12,7 +12,7 @@ from tempfile import TemporaryDirectory
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "scripts" / "linux" / "web_preview.sh"
+SCRIPT = ROOT / "scripts" / "ops" / "web_preview.sh"
 
 
 def free_loopback_port() -> int:

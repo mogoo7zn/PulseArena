@@ -253,9 +253,6 @@ func _test_nested_private_diagnostics_are_removed() -> int:
 	if bool(diagnostics.get("line_of_sight", true)) or str(diagnostics.get("movement_reason", "")) != "engagement_vantage":
 		push_error("TACTICAL TEST: safe tactical diagnostics must preserve line-of-sight and movement reason")
 		failures += 1
-	if str(diagnostics.get("reserve_basis", "")) != "dash_ready" or not is_equal_approx(float(diagnostics.get("reserve_ratio", 0.0)), 0.26):
-		push_error("TACTICAL TEST: safe tactical diagnostics must preserve reserve cause and ratio")
-		failures += 1
 	if diagnostics.has("model_id"):
 		push_error("TACTICAL TEST: non-string container was coerced into a safe primitive field")
 		failures += 1

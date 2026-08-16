@@ -9,15 +9,15 @@ from training.server.archive_pre_draw_fix_runs import apply_archive_plan, build_
 
 def _make_training_tree(root: Path) -> None:
     for relative in (
-        "training/artifacts/runs/hybrid_tactical_v2_ppo_pilot/metrics.jsonl",
-        "training/artifacts/runs/hybrid_tactical_v2_8gpu_parallel_pilot/gpu0/metrics.jsonl",
-        "training/artifacts/runs/hybrid_tactical_v2_reward_diagnostic_2048/metrics.jsonl",
-        "training/artifacts/runs/hybrid_tactical_v2_8gpu_foundation_diagnostic_8192/metrics.jsonl",
-        "training/artifacts/runs/hybrid_tactical_v2_audit_explainability_smoke/metrics.jsonl",
-        "training/artifacts/runs/hybrid_tactical_v2_audit_explainability_smoke_v2/metrics.jsonl",
-        "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/metrics.jsonl",
-        "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_expanded_65536/metrics.jsonl",
-        "training/artifacts/runs/hybrid_tactical_v2_8gpu_ppo_resume_expanded_262144/metrics.jsonl",
+        "training/runs/hybrid_tactical_v2_ppo_pilot/metrics.jsonl",
+        "training/runs/hybrid_tactical_v2_8gpu_parallel_pilot/gpu0/metrics.jsonl",
+        "training/runs/hybrid_tactical_v2_reward_diagnostic_2048/metrics.jsonl",
+        "training/runs/hybrid_tactical_v2_8gpu_foundation_diagnostic_8192/metrics.jsonl",
+        "training/runs/hybrid_tactical_v2_audit_explainability_smoke/metrics.jsonl",
+        "training/runs/hybrid_tactical_v2_audit_explainability_smoke_v2/metrics.jsonl",
+        "training/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/metrics.jsonl",
+        "training/runs/hybrid_tactical_v2_8gpu_bc_warmstart_expanded_65536/metrics.jsonl",
+        "training/runs/hybrid_tactical_v2_8gpu_ppo_resume_expanded_262144/metrics.jsonl",
         "training/artifacts/runs/evaluations/hybrid_tactical_v2_ppo_resume_candidate_20260802_paired_dev8/evaluation.json",
         "training/artifacts/runs/evaluations/hybrid_tactical_v2_ppo_resume_candidate_20260804_paired_dev8/evaluation.json",
         "training/models/model_catalog.json",
@@ -37,7 +37,7 @@ class ArchivePreDrawFixRunsTests(unittest.TestCase):
             plan = build_archive_plan(root)
             sources = {source.relative_to(root).as_posix() for source, _destination in plan}
 
-            self.assertIn("training/artifacts/runs/hybrid_tactical_v2_ppo_pilot", sources)
+            self.assertIn("training/runs/hybrid_tactical_v2_ppo_pilot", sources)
             self.assertIn(
                 "training/artifacts/runs/evaluations/hybrid_tactical_v2_ppo_resume_candidate_20260802_paired_dev8",
                 sources,

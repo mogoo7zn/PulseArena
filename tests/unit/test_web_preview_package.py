@@ -10,7 +10,7 @@ from tempfile import TemporaryDirectory
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PACKAGER = ROOT / "training" / "package_server_bundle.py"
+PACKAGER = ROOT / "training" / "server" / "package_server_bundle.py"
 
 
 class WebPreviewPackageTests(unittest.TestCase):
