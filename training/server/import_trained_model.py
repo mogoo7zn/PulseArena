@@ -50,7 +50,7 @@ def build_manifest(args: argparse.Namespace, checkpoint_path: Path) -> dict[str,
     reward_profile_id = str(getattr(args, "reward_profile_id", "baseline")).strip()
     if not reward_profile_id:
         raise SystemExit("reward-profile-id cannot be empty")
-    return {
+    manifest: dict[str, Any] = {
         "schema_version": 2,
         "model_id": args.model_id,
         "label": args.label or args.model_id.replace("_", " ").title(),
@@ -67,6 +67,17 @@ def build_manifest(args: argparse.Namespace, checkpoint_path: Path) -> dict[str,
         "description": args.description,
         "metrics": metrics,
     }
+    strength = str(getattr(args, "strength_profile", "") or "").strip()
+    if strength:
+        from training.core.ppo.sampling import resolve_strength_profile
+        profile = resolve_strength_profile(strength)
+        manifest["inference_profile"] = {
+            "strength": strength,
+            "temperature": profile["temperature"],
+            "mask_soften": profile["mask_soften"],
+            "safety_override_threshold": profile["safety_override_threshold"],
+        }
+    return manifest
 
 
 def update_catalog(manifest_path: Path, model_id: str, label: str, kind: str, promote_default: bool) -> None:
@@ -99,6 +110,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input-dim", type=int, default=142)
     parser.add_argument("--metrics-json", type=Path, default=None, help="Optional metrics JSON exported by the server run.")
     parser.add_argument("--reward-profile-id", default="baseline", help="Immutable reward/feature profile used for this trained candidate.")
+    parser.add_argument("--strength-profile", default="", help="One of easy/casual/normal/strong/elite; writes the inference_profile block for the 5-tier menu (D1).")
     parser.add_argument("--description", default="Imported trained Hybrid Tactical v2 policy.")
     parser.add_argument("--update-catalog", action="store_true")
     parser.add_argument("--promote-default", action="store_true")

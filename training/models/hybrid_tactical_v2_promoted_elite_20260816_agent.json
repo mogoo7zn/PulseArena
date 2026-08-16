@@ -1,0 +1,23 @@
+{
+  "schema_version": 2,
+  "model_id": "hybrid_tactical_v2_promoted_elite_20260816",
+  "label": "Hybrid Tactical V2 Promoted Elite 20260816",
+  "kind": "tactical_actor_critic",
+  "checkpoint": "training/checkpoints/hybrid/hybrid_tactical_v2_promoted_elite_20260816.pt",
+  "input_dim": 142,
+  "hidden": 192,
+  "protocol": 2,
+  "observation_schema_version": 2,
+  "tactical_action_schema_version": 2,
+  "created_at": "2026-08-16T15:16:52.801455+00:00",
+  "training_run_id": "hybrid_tactical_v2_promoted_elite_20260816",
+  "reward_profile_id": "legal_window_pressure",
+  "description": "5-tier intensity: same checkpoint, inference_profile=elite (T=0.25, mask_soften=0.0, safety_threshold=0.95). D1.",
+  "metrics": {},
+  "inference_profile": {
+    "strength": "elite",
+    "temperature": 0.25,
+    "mask_soften": 0.0,
+    "safety_override_threshold": 0.95
+  }
+}
