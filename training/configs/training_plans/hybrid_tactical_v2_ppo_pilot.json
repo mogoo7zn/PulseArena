@@ -23,7 +23,7 @@
   },
   "tactical_ppo": {
     "enabled": true,
-    "output_dir": "training/runs/hybrid_tactical_v2_ppo_pilot",
+    "output_dir": "training/artifacts/runs/hybrid_tactical_v2_ppo_pilot",
     "stage": "01_foundation_combat",
     "map_id": "dungeon",
     "mode": "ffa",

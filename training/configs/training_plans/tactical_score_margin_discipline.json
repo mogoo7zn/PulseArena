@@ -1,0 +1,40 @@
+{
+  "plan_id": "tactical_score_margin_discipline",
+  "profile_id": "local_constrained",
+  "description": "Protocol-v2 PPO diagnostic for true score-margin discipline. Starts only from the audited tactical BC checkpoint; never resumes a pre_draw_fix PPO checkpoint and never promotes the catalog default.",
+  "behavior_clone": {"enabled": false},
+  "tactical_behavior_clone": {"enabled": false},
+  "online_self_play": {"enabled": false},
+  "tactical_ppo": {
+    "enabled": true,
+    "reward_profile_id": "score_margin_discipline",
+    "output_dir": "training/artifacts/runs/score_margin_discipline/diagnostic_90s_dungeon",
+    "bc_checkpoint": "training/artifacts/runs/hybrid_tactical_bc/best_tactical_policy.pt",
+    "stage": "score_margin_discipline_diagnostic",
+    "map_id": "dungeon",
+    "mode": "ffa",
+    "agents": 2,
+    "opponent_controller": "scripted",
+    "seconds": 90,
+    "seed": 20260810,
+    "rollout_steps": 256,
+    "total_env_steps": 5400,
+    "tick_skip": 4,
+    "hidden": 192,
+    "recurrent": false,
+    "lr": 0.0001,
+    "clip_ratio": 0.15,
+    "value_coef": 0.5,
+    "entropy_coef": 0.005,
+    "max_grad_norm": 0.5,
+    "update_epochs": 4,
+    "minibatch_size": 1024,
+    "mixed_precision": true,
+    "port": 18930,
+    "require_cuda": true
+  },
+  "multi_gpu": {
+    "enabled": true,
+    "config": "training/configs/multi_gpu/score_margin_discipline_diagnostic.json"
+  }
+}

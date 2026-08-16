@@ -1,0 +1,12 @@
+{
+  "reward_profile_id": "legal_window_pressure",
+  "runtime_resolver": "scripts/config/reward_config.gd:RewardConfig.for_profile",
+  "purpose": "Proactive legal engagements with executor-authorized, realized projectile damage.",
+  "components": {
+    "legal_window_damage": 0.03,
+    "legal_window_commitment": 0.05,
+    "missed_legal_window": -0.02,
+    "avoidable_override": -0.03
+  },
+  "attribution": "Commitment requires target_valid and fire_allowed. Damage requires a registered authorized projectile to hit."
+}

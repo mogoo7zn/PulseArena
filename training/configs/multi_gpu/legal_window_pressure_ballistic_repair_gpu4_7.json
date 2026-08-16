@@ -1,0 +1,13 @@
+{
+  "description": "Four isolated four-map PPO diagnostics after the ballistic intercept-lane repair; no deployment promotion.",
+  "max_parallel_tasks": 4,
+  "fail_fast": true,
+  "log_dir": "training/artifacts/runs/legal_window_pressure/ballistic_repair_gpu4_7/logs",
+  "env": {"GODOT_BIN": "{root}/.tools/godot-4.7.1/Godot_v4.7.1-stable_linux.x86_64", "HOME": "{root}/.tools/godot-user", "MPLCONFIGDIR": "{root}/test-results/matplotlib"},
+  "tasks": [
+    {"task_id": "ballistic_repair_gpu4", "gpu_ids": [4], "command": ["{python}", "{root}/training.pipelines.train_pipeline", "--profile", "local_constrained", "--plan", "tactical_legal_window_pressure_four_map_ballistic_repair", "--phase", "ppo", "--execute", "--total-env-steps", "16384", "--output-dir", "training/artifacts/runs/legal_window_pressure/ballistic_repair_gpu4", "--port", "18961", "--seed", "20261211"]},
+    {"task_id": "ballistic_repair_gpu5", "gpu_ids": [5], "command": ["{python}", "{root}/training.pipelines.train_pipeline", "--profile", "local_constrained", "--plan", "tactical_legal_window_pressure_four_map_ballistic_repair", "--phase", "ppo", "--execute", "--total-env-steps", "16384", "--output-dir", "training/artifacts/runs/legal_window_pressure/ballistic_repair_gpu5", "--port", "18962", "--seed", "20261212"]},
+    {"task_id": "ballistic_repair_gpu6", "gpu_ids": [6], "command": ["{python}", "{root}/training.pipelines.train_pipeline", "--profile", "local_constrained", "--plan", "tactical_legal_window_pressure_four_map_ballistic_repair", "--phase", "ppo", "--execute", "--total-env-steps", "16384", "--output-dir", "training/artifacts/runs/legal_window_pressure/ballistic_repair_gpu6", "--port", "18963", "--seed", "20261213"]},
+    {"task_id": "ballistic_repair_gpu7", "gpu_ids": [7], "command": ["{python}", "{root}/training.pipelines.train_pipeline", "--profile", "local_constrained", "--plan", "tactical_legal_window_pressure_four_map_ballistic_repair", "--phase", "ppo", "--execute", "--total-env-steps", "16384", "--output-dir", "training/artifacts/runs/legal_window_pressure/ballistic_repair_gpu7", "--port", "18964", "--seed", "20261214"]}
+  ]
+}

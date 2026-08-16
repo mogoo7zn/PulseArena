@@ -13,7 +13,7 @@ COLLECT_SECONDS="${COLLECT_SECONDS:-30}"
 COLLECT_SEED="${COLLECT_SEED:-51000}"
 RUN_BC="${RUN_BC:-0}"
 RUN_ID="${RUN_ID:-server_pilot_$(date -u +%Y%m%dT%H%M%SZ)}"
-REPORT_DIR="training/runs/${RUN_ID}/reports"
+REPORT_DIR="training/artifacts/runs/${RUN_ID}/reports"
 
 if [[ -z "${GODOT_BIN:-}" ]]; then
   echo "GODOT_BIN must point to a Godot 4 headless/console executable." >&2
@@ -22,7 +22,7 @@ fi
 
 mkdir -p "${REPORT_DIR}"
 
-python training/server_agent/preflight.py \
+python training.server.preflight \
   --godot "${GODOT_BIN}" \
   --output "${REPORT_DIR}/preflight.json" \
   --require-cuda
@@ -30,8 +30,8 @@ python tests/smoke/static_project_check.py
 "${GODOT_BIN}" --headless --path . --script tests/run_tests.gd
 "${GODOT_BIN}" --headless --path . --script tests/smoke/map_build_check.gd
 
-python training/train_pipeline.py --profile "${PROFILE}" --plan "${PLAN}" --phase validate
-python training/run_stage.py \
+python training.pipelines.train_pipeline --profile "${PROFILE}" --plan "${PLAN}" --phase validate
+python training.pipelines.run_stage \
   --profile "${PROFILE}" \
   --stage "${COLLECT_STAGE}" \
   --matches "${COLLECT_MATCHES}" \
@@ -42,25 +42,25 @@ python training/run_stage.py \
   --record-replay \
   --execute
 
-python training/server_agent/audit_hybrid_replays.py \
-  --replay-dir training/replays \
+python training.server.audit_hybrid_replays \
+  --replay-dir training/data/replays \
   --output "${REPORT_DIR}/raw_replay_audit.json" \
   --min-rows 1000
-python training/server_agent/prepare_hybrid_replays.py \
-  --input-dir training/replays \
-  --output-dir training/replays_decision \
+python training.server.prepare_hybrid_replays \
+  --input-dir training/data/replays \
+  --output-dir training/data/replays_decision \
   --output "${REPORT_DIR}/decision_dataset.json"
-python training/server_agent/audit_hybrid_replays.py \
-  --replay-dir training/replays_decision \
+python training.server.audit_hybrid_replays \
+  --replay-dir training/data/replays_decision \
   --output "${REPORT_DIR}/decision_replay_audit.json" \
   --min-rows 1000
 
 if [[ "${RUN_BC}" == "1" ]]; then
-  python training/train_pipeline.py --profile "${PROFILE}" --plan "${PLAN}" --phase bc --execute --swanlab-mode "${SWANLAB_MODE}"
+  python training.pipelines.train_pipeline --profile "${PROFILE}" --plan "${PLAN}" --phase bc --execute --swanlab-mode "${SWANLAB_MODE}"
 else
   echo "Pilot collection and audit completed. Review ${REPORT_DIR}; rerun with RUN_BC=1 only after the agent prompt's gates pass."
 fi
 
-python training/train_pipeline.py --profile "${PROFILE}" --plan "${PLAN}" --phase validate
-python training/train_pipeline.py --profile "${PROFILE}" --plan "${PLAN}" --phase collect --execute
-python training/train_pipeline.py --profile "${PROFILE}" --plan "${PLAN}" --phase bc --execute --swanlab-mode "${SWANLAB_MODE}"
+python training.pipelines.train_pipeline --profile "${PROFILE}" --plan "${PLAN}" --phase validate
+python training.pipelines.train_pipeline --profile "${PROFILE}" --plan "${PLAN}" --phase collect --execute
+python training.pipelines.train_pipeline --profile "${PROFILE}" --plan "${PLAN}" --phase bc --execute --swanlab-mode "${SWANLAB_MODE}"

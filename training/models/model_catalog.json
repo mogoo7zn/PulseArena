@@ -9,6 +9,22 @@
       "kind": "hybrid_tactical_prior",
       "protocol": 2,
       "description": "Active protocol v2 tactical baseline. The model returns high-level decisions; Godot executes deterministic aim, fire gating, evasion, movement, and fallback logic."
+    },
+    {
+      "model_id": "hybrid_tactical_v2_ppo_expanded_candidate_20260802",
+      "label": "Hybrid Tactical v2 PPO Expanded Candidate",
+      "manifest": "training/models/hybrid_tactical_v2_ppo_expanded_candidate_20260802_agent.json",
+      "kind": "tactical_actor_critic",
+      "protocol": 2,
+      "description": "Imported Hybrid Tactical v2 trained policy."
+    },
+    {
+      "model_id": "hybrid_tactical_v2_ppo_resume_candidate_20260802",
+      "label": "Hybrid Tactical v2 PPO Resume Candidate",
+      "manifest": "training/models/hybrid_tactical_v2_ppo_resume_candidate_20260802_agent.json",
+      "kind": "tactical_actor_critic",
+      "protocol": 2,
+      "description": "Imported Hybrid Tactical v2 trained policy."
     }
   ]
 }

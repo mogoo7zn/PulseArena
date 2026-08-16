@@ -1,0 +1,73 @@
+{
+  "plan_id": "tactical_legal_window_pressure_four_map_repair_diagnostic",
+  "profile_id": "local_constrained",
+  "description": "Isolated four-map high-playability repair diagnostic. It refreshes the existing legal_window_pressure tactical prior from balanced replay collection, then runs a non-deployed GPU-4 PPO candidate.",
+  "collect": {
+    "stage": "08_mixed_ffa_league",
+    "godot": ".tools/godot-4.7.1/Godot_v4.7.1-stable_linux.x86_64",
+    "record_replay": true,
+    "matches": 32,
+    "seconds": 60,
+    "seed": 20261086,
+    "agent_controller": "hybrid",
+    "agents": 2,
+    "agent_model_id": "hybrid_tactical_v1",
+    "reward_profile_id": "legal_window_pressure",
+    "training_spawn_policy": "pressure_curriculum",
+    "replay_dir": "training/data/replays/four_map_repair_diagnostic_bc"
+  },
+  "behavior_clone": {
+    "enabled": false
+  },
+  "tactical_behavior_clone": {
+    "enabled": true,
+    "replay_dir": "training/data/replays/four_map_repair_diagnostic_bc",
+    "output_dir": "training/artifacts/runs/four_map_repair_diagnostic_bc",
+    "epochs": 40,
+    "batch_size": 1024,
+    "hidden": 192,
+    "lr": 0.0003,
+    "val_ratio": 0.2,
+    "seed": 20261086,
+    "decision_key": "executed_decision",
+    "swanlab_mode": "disabled",
+    "swanlab_project": "pulsearena-four-map-playability",
+    "run_name": "four_map_repair_diagnostic_bc"
+  },
+  "online_self_play": {
+    "enabled": false
+  },
+  "tactical_ppo": {
+    "enabled": true,
+    "reward_profile_id": "legal_window_pressure",
+    "output_dir": "training/artifacts/runs/legal_window_pressure/four_map_repair_diagnostic_gpu4",
+    "bc_checkpoint": "training/artifacts/runs/four_map_repair_diagnostic_bc/best_tactical_policy.pt",
+    "godot": ".tools/godot-4.7.1/Godot_v4.7.1-stable_linux.x86_64",
+    "stage": "four_map_repair_diagnostic_60s",
+    "map_ids": ["dungeon", "sky_city", "jungle", "mist_world"],
+    "mode": "ffa",
+    "agents": 2,
+    "opponent_controller": "scripted",
+    "training_spawn_policy": "pressure_curriculum",
+    "seconds": 60,
+    "seed": 20261086,
+    "rollout_steps": 256,
+    "total_env_steps": 32768,
+    "tick_skip": 4,
+    "hidden": 192,
+    "recurrent": false,
+    "lr": 0.0001,
+    "clip_ratio": 0.15,
+    "value_coef": 0.5,
+    "entropy_coef": 0.005,
+    "max_grad_norm": 0.5,
+    "update_epochs": 4,
+    "minibatch_size": 1024,
+    "mixed_precision": true,
+    "port": 18945,
+    "require_cuda": true
+  },
+  "multi_gpu": {
+    "enabled": false
+  }
+}

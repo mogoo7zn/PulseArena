@@ -20,6 +20,19 @@ Low-level movement execution, projectile lead aiming, fire gates, evasion,
 energy reservation, and stuck recovery live in Godot deterministic code. The
 trainable model owns high-level target, movement, fire, and skill decisions.
 
+## Layout
+
+Code is grouped by responsibility:
+
+- `core/` — RL primitives: encoding, env, models, trainers.
+- `inference/` — runtime serving (JSONL TCP + diagnostic).
+- `pipelines/` — collect / BC / PPO orchestration entry points.
+- `evaluation/` — baseline invariant audit + candidate rollouts.
+- `server/` — server-bundle operations: preflight, replay hygiene,
+  multi-GPU dispatch, packaging, registry import.
+- `configs/`, `artifacts/`, `data/`, `models/` — configs, runtime outputs,
+  inputs, and active deployable manifests respectively.
+
 ## Key Files
 
 - `configs/curriculum.json`: staged map and mode curriculum.
@@ -29,13 +42,13 @@ trainable model owns high-level target, movement, fire, and skill decisions.
 - `configs/training_plans/hybrid_tactical_local.json`: default local v2 plan.
 - `configs/training_plans/hybrid_tactical_full.json`: server v2 plan scaffold.
 - `configs/training_plans/hybrid_tactical_v2_server_bc.json`: server mask-aware BC plan.
-- `rl/encoding.py`: raw and hybrid replay encoders.
-- `rl/tactical_bc_trainer.py`: v2 tactical behavior-cloning warm start.
-- `import_trained_model.py`: import a server-trained tactical checkpoint into the local registry.
-- `package_server_bundle.py`: create a clean Ubuntu server training bundle.
-- `rl/models.py`: `TacticalPolicyNet` and legacy policy nets.
-- `train_pipeline.py`: unified collect / BC / PPO entry point.
+- `core/encoding.py`: raw and hybrid replay encoders.
+- `core/tactical_bc_trainer.py`: v2 tactical behavior-cloning warm start.
+- `core/models.py`: `TacticalPolicyNet` and legacy policy nets.
+- `pipelines/train_pipeline.py`: unified collect / BC / PPO entry point.
 - `inference/serve_agent.py`: JSONL TCP inference service.
+- `server/import_trained_model.py`: import a server-trained tactical checkpoint into the local registry.
+- `server/package_server_bundle.py`: create a clean Ubuntu server training bundle.
 
 ## Phase 1 Baseline Audit
 
@@ -49,7 +62,7 @@ make train-baseline-audit
 For a GPU training host, run the CUDA preflight as the stop/go check:
 
 ```bash
-python training/server_agent/preflight.py --require-cuda
+python training/preflight.py --require-cuda
 ```
 
 The baseline audit exits `0` only when its baseline contract passes, and exits
@@ -78,6 +91,45 @@ Train high-level tactical heads from `hybrid_replay_v2` rows:
 ```bash
 python training/train_pipeline.py --profile local_constrained --phase bc --execute --swanlab-mode offline
 ```
+
+Dry-run the eight-card tactical PPO task plan:
+
+```bash
+python training/train_pipeline.py --profile full_distributed_league --plan hybrid_tactical_v2_8gpu_parallel_pilot --phase ppo-multi
+```
+
+Execute it after CUDA and Godot preflight pass:
+
+```bash
+python training/train_pipeline.py --profile full_distributed_league --plan hybrid_tactical_v2_8gpu_parallel_pilot --phase ppo-multi --execute
+```
+
+This launches independent protocol-v2 tactical PPO workers on disjoint GPUs. It
+does not turn the single-worker learner into DDP.
+
+## Named Tactical Reward Diagnostics
+
+Two non-default, BC-based PPO branches are available after the draw outcome
+fix. Both use a hard scripted opponent in the first 1v1 Dungeon diagnostic so
+the learner receives an engagement curriculum rather than unseeded BC-vs-BC
+self-play:
+
+- `tactical_legal_window_pressure`: rewards executor-authorized projectile
+  hits and legal engagement commitment; intended to produce sustained pressure.
+- `tactical_score_margin_discipline`: rewards real damage exchange and true
+  positive score margin; intended to optimize competitive outcome.
+
+Dry-run either branch before execution:
+
+```bash
+python training/train_pipeline.py --profile local_constrained --plan tactical_legal_window_pressure --phase ppo
+python training/train_pipeline.py --profile local_constrained --plan tactical_score_margin_discipline --phase ppo
+```
+
+Their parameter contracts are in `configs/rewards/`. Pre-draw-fix generated
+runs are retained under `runs/archived/pre_draw_fix/`; deployed manifests and
+checkpoint files remain in their original locations and are never resume
+sources for these branches.
 
 Server-side v2 BC plan:
 
@@ -121,12 +173,12 @@ python -m training.inference.serve_agent --print-info
 
 Active runs should write to:
 
-- `training/replays/`: current replay collection, normally empty before a run.
-- `training/runs/hybrid_tactical_bc/`: local tactical BC outputs.
-- `training/runs/hybrid_tactical_bc_full/`: server tactical BC outputs.
-- `training/checkpoints/hybrid/`: future promoted tactical checkpoints.
-- `training/incoming_models/`: drop server-trained checkpoints before import.
-- `training/experiments/`: durable experiment traces for reports and papers.
+- `training/data/replays/`: current replay collection, normally empty before a run.
+- `training/artifacts/runs/hybrid_tactical_bc/`: local tactical BC outputs.
+- `training/artifacts/runs/hybrid_tactical_bc_full/`: server tactical BC outputs.
+- `training/artifacts/checkpoints/hybrid/`: future promoted tactical checkpoints.
+- `training/data/incoming_models/`: drop server-trained checkpoints before import.
+- `training/data/experiments/`: durable experiment traces for reports and papers.
 - `training/models/`: active deployable manifests and catalog only.
 
 Historical raw-action PPO/BC checkpoints, replays, SwanLab logs, and old plans

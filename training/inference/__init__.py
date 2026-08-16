@@ -1,1 +1,1 @@
-"""Runtime inference utilities for playing trained agents in Pulse Arena."""
+"""Inference runtime: JSONL TCP server + diagnostic helpers."""

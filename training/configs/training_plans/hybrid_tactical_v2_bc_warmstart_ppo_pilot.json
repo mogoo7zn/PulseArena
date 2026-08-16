@@ -1,0 +1,51 @@
+{
+  "plan_id": "hybrid_tactical_v2_bc_warmstart_ppo_pilot",
+  "profile_id": "local_constrained",
+  "description": "Protocol-v2 tactical PPO initialized from the audited local tactical BC checkpoint. This is a candidate-training diagnostic and does not update the model catalog.",
+  "collect": {
+    "stage": "01_foundation_combat",
+    "record_replay": false,
+    "matches": 1,
+    "seconds": 20,
+    "seed": 20260801,
+    "agent_controller": "hybrid",
+    "agent_model_id": "hybrid_tactical_v1"
+  },
+  "behavior_clone": {
+    "enabled": false
+  },
+  "tactical_behavior_clone": {
+    "enabled": false
+  },
+  "online_self_play": {
+    "enabled": false,
+    "notes": "Legacy raw-action PPO remains disabled for this tactical warm-start pilot."
+  },
+  "tactical_ppo": {
+    "enabled": true,
+    "output_dir": "training/artifacts/runs/hybrid_tactical_v2_bc_warmstart_ppo_pilot",
+    "bc_checkpoint": "training/artifacts/runs/hybrid_tactical_bc/best_tactical_policy.pt",
+    "stage": "01_foundation_combat",
+    "map_id": "dungeon",
+    "mode": "ffa",
+    "agents": 2,
+    "seconds": 20,
+    "seed": 20261001,
+    "rollout_steps": 256,
+    "total_env_steps": 8192,
+    "tick_skip": 4,
+    "hidden": 192,
+    "recurrent": false,
+    "rnn_hidden": null,
+    "lr": 0.0001,
+    "clip_ratio": 0.15,
+    "value_coef": 0.5,
+    "entropy_coef": 0.005,
+    "max_grad_norm": 0.5,
+    "update_epochs": 4,
+    "minibatch_size": 1024,
+    "mixed_precision": true,
+    "port": 8767,
+    "require_cuda": true
+  }
+}

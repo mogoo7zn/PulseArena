@@ -1,7 +1,7 @@
 {
   "plan_id": "hybrid_tactical_v2_server_pilot_bc",
   "profile_id": "full_distributed_league",
-  "description": "Bounded single-GPU Hybrid Tactical v2 behavior-cloning pilot. The replay input must be decision-rate sampled by training/server_agent/prepare_hybrid_replays.py.",
+  "description": "Bounded single-GPU Hybrid Tactical v2 behavior-cloning pilot. The replay input must be decision-rate sampled by training.server.prepare_hybrid_replays.",
   "collect": {
     "stage": "01_foundation_combat",
     "record_replay": true,
@@ -17,7 +17,7 @@
   "tactical_behavior_clone": {
     "enabled": true,
     "replay_dir": "training/replays_decision",
-    "output_dir": "training/runs/hybrid_tactical_v2_bc_pilot",
+    "output_dir": "training/artifacts/runs/hybrid_tactical_v2_bc_pilot",
     "epochs": 40,
     "batch_size": 4096,
     "hidden": 256,

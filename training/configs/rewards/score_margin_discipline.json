@@ -1,0 +1,12 @@
+{
+  "reward_profile_id": "score_margin_discipline",
+  "runtime_resolver": "scripts/config/reward_config.gd:RewardConfig.for_profile",
+  "purpose": "Competitive real-score optimization through favorable realized exchanges and terminal positive margin.",
+  "components": {
+    "efficient_damage": 0.02,
+    "unfavorable_exchange": -0.02,
+    "avoidable_override": -0.02,
+    "positive_score_margin": 0.25
+  },
+  "attribution": "Damage terms use realized damage. The terminal margin term is zero for a draw or non-positive score margin."
+}

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import errno
 import json
+import re
 import socketserver
 import time
 from dataclasses import dataclass
@@ -10,11 +11,18 @@ from pathlib import Path
 from threading import RLock
 from typing import Any
 
-from training.inference.model_runtime import RuntimeAgentPolicy, resolve_path
+from training.core.model_runtime import RuntimeAgentPolicy, resolve_path
 
 
 DEFAULT_MANIFEST = Path("training/models/hybrid_tactical_v1_agent.json")
 DEFAULT_CATALOG = Path("training/models/model_catalog.json")
+
+
+def validate_inference_device(value: str) -> str:
+    device = str(value).strip()
+    if device in {"auto", "cpu", "cuda"} or re.fullmatch(r"cuda:[0-9]+", device):
+        return device
+    raise argparse.ArgumentTypeError("device must be one of: auto, cpu, cuda, cuda:N")
 
 
 @dataclass(frozen=True)
@@ -210,7 +218,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--catalog", type=Path, default=None, help="Run a catalog of selectable model manifests.")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8766)
-    parser.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"])
+    parser.add_argument("--device", default="auto", type=validate_inference_device)
     parser.add_argument("--print-info", action="store_true")
     return parser.parse_args()
 

@@ -8,7 +8,7 @@ from statistics import mean, pstdev
 from typing import Any
 
 from training.inference.serve_agent import AgentPolicyRegistry
-from training.rl.encoding import (
+from training.core.encoding import (
     TACTICAL_FIRE_MODES,
     TACTICAL_MOVEMENTS,
     TACTICAL_SKILL_MODES,
@@ -16,7 +16,7 @@ from training.rl.encoding import (
     tactical_action_masks_from_observation,
     tactical_features_from_observation,
 )
-from training.rl.godot_env import GodotStepEnv
+from training.core.godot_env import GodotStepEnv
 
 
 def make_config(args: argparse.Namespace) -> dict[str, Any]:
@@ -112,7 +112,7 @@ def main() -> int:
         for _step in range(max(args.steps, 1)):
             actions: dict[str, Any] = {}
             for player_id, observation in response["observations"].items():
-                if policy.info.kind in {"hybrid_tactical_prior", "tactical_policy"}:
+                if policy.info.kind in {"hybrid_tactical_prior", "tactical_policy", "tactical_actor_critic"}:
                     decision = policy.act_tactical(
                         tactical_features=tactical_features_from_observation(observation),
                         action_masks=tactical_action_masks_from_observation(observation),

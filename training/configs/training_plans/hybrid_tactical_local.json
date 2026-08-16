@@ -17,7 +17,7 @@
   "tactical_behavior_clone": {
     "enabled": true,
     "replay_dir": "training/replays",
-    "output_dir": "training/runs/hybrid_tactical_bc",
+    "output_dir": "training/artifacts/runs/hybrid_tactical_bc",
     "epochs": 40,
     "batch_size": 1024,
     "hidden": 192,
