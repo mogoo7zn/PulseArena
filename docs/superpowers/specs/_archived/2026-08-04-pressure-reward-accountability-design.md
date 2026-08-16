@@ -58,3 +58,25 @@ If a gate fails, retain the output as a diagnostic artifact and revise the relev
 - No wall-penetrating shots or private-state observations.
 - No automatic catalog promotion, checkpoint replacement, or movement of deployed assets.
 - No claim that four independent workers are a shared learner.
+
+## Follow-on: reproducible service evaluation and resource-aware expansion
+
+The contact-reset candidate must not be judged with a baseline reward profile or an
+implicitly selected, busy GPU.  A tactical candidate manifest therefore carries the
+immutable `reward_profile_id` used to produce it.  Evaluation copies that value into
+the Godot `MatchConfig`, so controller feature construction, fire legality, and reward
+telemetry use the same profile as training.  The evaluator accepts `cpu`, `auto`,
+`cuda`, or an explicit `cuda:N` device; no device is silently remapped.
+
+The service runner warms the model before starting the timed match.  Startup and warmup
+are reported separately from per-decision latency, and any run with service timeout or
+fallback above the gate is diagnostic only.  It is not treated as a policy regression
+or promotion evidence.
+
+The next training curriculum is staged rather than a direct extension of the
+contact-reset result: short legal-contact initialization, then approach/vantage
+episodes with distant or blocked targets, then 60--90 second resource-disciplined
+matches.  The pressure objective rewards damage conversion and actionable-window entry;
+it does not reward blocked intent or indiscriminate projectile expenditure.  Training
+on GPUs 4--7 starts only after the repaired service evaluation shows the intended
+profile, no material service fallback, and normal-spawn contact acquisition.

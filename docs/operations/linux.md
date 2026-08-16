@@ -31,7 +31,7 @@ CUDA wheel 不应由项目猜测。根据服务器驱动和 PyTorch 官方兼容
 
 ```bash
 export TORCH_INDEX_URL=https://download.pytorch.org/whl/cu124
-bash scripts/linux/bootstrap.sh --with-training
+bash scripts/ops/bootstrap.sh --with-training
 ```
 
 ## 日常命令
@@ -45,8 +45,8 @@ make train-validate    # 验证本地训练计划
 make package-server    # 生成 Linux 服务器训练包
 ```
 
-`training/local_settings.json` 是被 Git 忽略的个人配置。失效的旧绝对路径会被
-`training/run_stage.py` 自动跳过；`GODOT_BIN` 和 `--godot` 始终优先。
+`training/configs/local_settings.json` 是被 Git 忽略的个人配置。失效的旧绝对路径会被
+`training/pipeline/run_stage.py` 自动跳过；`GODOT_BIN` 和 `--godot` 始终优先。
 
 ## 网页端调试与远程访问
 
@@ -88,9 +88,9 @@ GitHub Actions 的 Linux 流程会下载匹配的 Godot 版本，执行完整无
 平台路径对象的新 checkpoint：
 
 ```bash
-python training/migrate_legacy_checkpoint.py \
+python training/model_io/migrate_legacy_checkpoint.py \
   --input archive/legacy_raw_ai/checkpoints/ppo_10m.pt \
-  --output training/incoming_models/ppo_10m_portable.pt \
+  --output training/data/incoming_models/ppo_10m_portable.pt \
   --allow-legacy-pickle
 ```
 

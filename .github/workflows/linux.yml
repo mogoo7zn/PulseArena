@@ -23,7 +23,7 @@ jobs:
       - run: python tests/smoke/static_project_check.py
       - run: python -m compileall -q training
       - run: python -m unittest tests.unit.test_web_preview_server tests.unit.test_web_preview_lifecycle tests.unit.test_web_preview_package -v
-      - run: bash -n tests/smoke/run_headless_smoke.sh scripts/linux/bootstrap.sh scripts/linux/export_linux.sh scripts/linux/export_web.sh scripts/linux/web_preview.sh
+      - run: bash -n tests/smoke/run_headless_smoke.sh scripts/ops/bootstrap.sh scripts/ops/export_linux.sh scripts/ops/export_web.sh scripts/ops/web_preview.sh
 
   godot:
     runs-on: ubuntu-24.04
@@ -51,7 +51,7 @@ jobs:
       - name: Export Linux release
         env:
           GODOT_BIN: ${{ runner.temp }}/godot/Godot_v${{ env.GODOT_VERSION }}-stable_linux.x86_64
-        run: bash scripts/linux/export_linux.sh
+        run: bash scripts/ops/export_linux.sh
       - run: test -x build/linux/PulseArena.x86_64
       - name: Export and verify loopback Web preview
         env:

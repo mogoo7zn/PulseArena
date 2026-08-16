@@ -37,7 +37,7 @@ AgentObservation
 - 奖励计算：`scripts/rl/reward_calculator.gd`。
 - 脚本 AI 基线：`scripts/controllers/scripted_agent_controller.gd`。
 - Hybrid 控制器：`scripts/controllers/hybrid_agent_controller.gd`。
-- 低层执行器：`scripts/agents/hybrid/`。
+- 低层执行器：`scripts/agents/`。
 - v2 推理服务：`training/inference/serve_agent.py`。
 - tactical BC 训练器：`training/rl/tactical_bc_trainer.py`。
 - 默认模型目录：`training/models/model_catalog.json`，当前只保留 `hybrid_tactical_v1`。
@@ -55,17 +55,17 @@ AgentObservation
 本地验证：
 
 ```bash
-python training/train_pipeline.py --profile local_constrained --phase validate
-python training/train_pipeline.py --profile local_constrained --phase collect
-python training/train_pipeline.py --profile local_constrained --phase bc
+python training/pipeline/train_pipeline.py --profile local_constrained --phase validate
+python training/pipeline/train_pipeline.py --profile local_constrained --phase collect
+python training/pipeline/train_pipeline.py --profile local_constrained --phase bc
 ```
 
 服务器计划：
 
 ```bash
-python training/train_pipeline.py --profile full_distributed_league --phase validate
-python training/train_pipeline.py --profile full_distributed_league --phase collect
-python training/train_pipeline.py --profile full_distributed_league --phase bc
+python training/pipeline/train_pipeline.py --profile full_distributed_league --phase validate
+python training/pipeline/train_pipeline.py --profile full_distributed_league --phase collect
+python training/pipeline/train_pipeline.py --profile full_distributed_league --phase bc
 ```
 
 默认 plan：

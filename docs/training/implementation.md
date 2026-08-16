@@ -50,25 +50,25 @@ archive/legacy_raw_ai/configs/
 验证默认本地 v2 plan：
 
 ```bash
-python training/train_pipeline.py --profile local_constrained --phase validate
+python training/pipeline/train_pipeline.py --profile local_constrained --phase validate
 ```
 
 采集 `hybrid_replay_v2`：
 
 ```bash
-python training/train_pipeline.py --profile local_constrained --phase collect --execute
+python training/pipeline/train_pipeline.py --profile local_constrained --phase collect --execute
 ```
 
 训练高层 tactical BC：
 
 ```bash
-python training/train_pipeline.py --profile local_constrained --phase bc --execute --swanlab-mode offline
+python training/pipeline/train_pipeline.py --profile local_constrained --phase bc --execute --swanlab-mode offline
 ```
 
 直接 dry-run Godot 采样命令：
 
 ```bash
-python training/run_stage.py --profile local_constrained --stage 01_foundation_combat --agent-controller hybrid --agent-model-id hybrid_tactical_v1 --record-replay
+python training/pipeline/run_stage.py --profile local_constrained --stage 01_foundation_combat --agent-controller hybrid --agent-model-id hybrid_tactical_v1 --record-replay
 ```
 
 ## 输出目录
@@ -76,19 +76,19 @@ python training/run_stage.py --profile local_constrained --stage 01_foundation_c
 当前训练数据从空目录开始：
 
 ```text
-training/replays/
+training/data/replays/
 ```
 
 本地 tactical BC 输出：
 
 ```text
-training/runs/hybrid_tactical_bc/
+training/artifacts/runs/hybrid_tactical_bc/
 ```
 
 后续正式 tactical checkpoint 建议放在：
 
 ```text
-training/checkpoints/hybrid/
+training/artifacts/checkpoints/hybrid/
 ```
 
 旧 checkpoint、raw replay、SwanLab 记录和服务器包已放入 `archive/legacy_raw_ai/`。

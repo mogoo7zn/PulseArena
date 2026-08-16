@@ -26,6 +26,7 @@ var fogs: Array[Dictionary] = []
 var portal_spawn_timer: float = 4.5
 var portal_pair: Dictionary = {}
 var portal_cooldowns: Dictionary = {}
+var fog_exposure_players: Dictionary = {}
 
 func configure(map_node: Node, size: Vector2, seed_value: int) -> void:
 	super.configure(map_node, size, seed_value)
@@ -33,6 +34,7 @@ func configure(map_node: Node, size: Vector2, seed_value: int) -> void:
 	portal_spawn_timer = rng.randf_range(2.2, 4.0)
 	portal_pair.clear()
 	portal_cooldowns.clear()
+	fog_exposure_players.clear()
 
 func rule_step(delta: float, players: Array, projectiles: Array, match_time: float, playing: bool) -> void:
 	if not playing:
@@ -64,7 +66,14 @@ func _update_fogs(delta: float, players: Array) -> void:
 			continue
 		_apply_player_visual_visibility(player)
 		if player.has_method("set_mist_visibility"):
-			player.set_mist_visibility(_mist_visibility_at_point(player.global_position))
+			var visibility := _mist_visibility_at_point(player.global_position)
+			player.set_mist_visibility(visibility)
+			var exposed := visibility < 0.999
+			if exposed and not bool(fog_exposure_players.get(player.player_id, false)):
+				var root = arena_map.get_parent() if arena_map != null else null
+				if root != null and root.has_method("record_map_event"):
+					root.record_map_event(player, "mist_fog")
+			fog_exposure_players[player.player_id] = exposed
 
 func _apply_player_visual_visibility(player) -> void:
 	if player != null and player.has_method("set_visuals_enabled"):
@@ -139,6 +148,9 @@ func _teleport_player(player, destination: Vector2, source: Vector2) -> void:
 	player.global_position = destination + exit_dir * 18.0
 	player.velocity = Vector2.ZERO
 	portal_cooldowns[player.player_id] = PORTAL_TELEPORT_COOLDOWN
+	var root = arena_map.get_parent() if arena_map != null else null
+	if root != null and root.has_method("record_map_event"):
+		root.record_map_event(player, "mist_portal")
 
 func _make_lobes(radius: float) -> Array[Dictionary]:
 	var lobes: Array[Dictionary] = [{

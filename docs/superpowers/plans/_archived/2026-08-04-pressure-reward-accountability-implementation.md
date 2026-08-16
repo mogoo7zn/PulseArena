@@ -97,3 +97,44 @@
 - [ ] Run Godot unit tests, Python unit tests, and `HOME="$PWD/.tools/godot-user" python3 tests/smoke/tactical_training_protocol_check.py --godot .tools/godot-4.7.1/Godot_v4.7.1-stable_linux.x86_64 --port 18770`.
 - [ ] Execute the four-GPU cohort only if the checks pass.
 - [ ] Aggregate the four audits against the gates in `docs/superpowers/specs/2026-08-04-pressure-reward-accountability-design.md`; retain all failures as diagnostic outputs and do not deploy a candidate.
+
+### Task 6: Candidate-aware service evaluation
+
+**Files:**
+- Modify: `training/import_trained_model.py`
+- Modify: `training/evaluate_tactical_candidate.py`
+- Modify: `tests/unit/test_import_trained_model.py`
+- Modify: `tests/unit/test_evaluate_tactical_candidate.py`
+
+**Interfaces:**
+- A tactical manifest stores `reward_profile_id` and validates it as a non-empty string.
+- `_evaluation_jobs(...)` carries the manifest profile to every service job.
+- `_service_match_config(job, model_port)` sends `reward_profile_id` to Godot.
+- The evaluator CLI accepts `cpu`, `auto`, `cuda`, and `cuda:N`; subprocesses receive the requested device unchanged.
+
+- [ ] Write a failing importer test that invokes the parser with `--reward-profile-id legal_window_pressure` and asserts the written manifest contains that exact profile.
+- [ ] Run the focused importer test; expect failure because the parser has no such option.
+- [ ] Add the explicit importer argument and manifest field without changing catalog promotion behavior.
+- [ ] Re-run the focused importer test; expect PASS.
+- [ ] Write a failing evaluator test that builds a pressure manifest job and asserts the service MatchConfig contains `reward_profile_id=legal_window_pressure`; add a companion assertion that `cuda:4` is accepted by the CLI/device validator.
+- [ ] Run the focused evaluator test; expect failure because the profile is omitted and the CLI restricts devices.
+- [ ] Propagate the profile through jobs/configuration, validate the device string, and preserve exact `cuda:N` device selection for the service process.
+- [ ] Re-run focused evaluator tests; expect PASS.
+
+### Task 7: Normal-spawn, energy-disciplined training gate
+
+**Files:**
+- Modify: `training/configs/training_plans/tactical_legal_window_pressure.json`
+- Modify: `training/configs/multi_gpu/legal_window_pressure_gpu4_7_event_gated.json`
+- Modify: `training/README.md`
+
+**Interfaces:**
+- The plan names separate contact, approach/vantage, and long-match resource stages.
+- GPU workers are limited to physical GPUs 4--7 and write only semantic, non-deployed output paths.
+- A launch is conditional on service fallback, range-acquisition, event-counter, and energy-conversion gates.
+
+- [ ] Add/adjust the smallest JSON test fixture proving stage names, explicit GPUs, ports, and output paths are non-overlapping.
+- [ ] Run the focused pipeline/orchestrator unit tests; expect failure for missing approach/resource stage metadata.
+- [ ] Add stage metadata and gates while keeping the existing plan file as the single source of truth.
+- [ ] Re-run the focused tests; expect PASS.
+- [ ] Execute one GPU4 service-backed normal-spawn gate on `cuda:4`, then start the four independent workers only if every gate passes.

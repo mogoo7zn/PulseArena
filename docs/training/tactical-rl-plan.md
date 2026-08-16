@@ -35,7 +35,7 @@ BC 只是强化学习的 warm start。当前候选不能晋级：回放中的回
 1. Godot 使用 `TacticalTeacher` 在 Scripted Hard、历史策略和当前策略对局中记录 `hybrid_replay_v2`。
 2. 每条记录包含 episode、seed、地图、模式、真实 tactical features、动作掩码、教师决策、最终执行动作、安全覆盖和回退诊断。
 3. 数据集按 `episode_id` 分组；缺失时才退回到 `random_seed` 分组为 train/dev/holdout，禁止帧级随机切分。BC 优化只读取 train episode，验证只读取 dev episode。
-4. 训练前必须运行 `training/server_agent/tactical_data_quality.py`，报告固定写入 `training/runs/tactical_data_quality.json`。缺少 replay 输入、存在 malformed row、教师标签不在其动作掩码内，或任一动作头没有标签覆盖时，数据集直接取消资格；报告同时记录地图/模式覆盖、回退率和连续重复决策率。
+4. 训练前必须运行 `training/server_agent/tactical_data_quality.py`，报告固定写入 `training/artifacts/runs/tactical_data_quality.json`。缺少 replay 输入、存在 malformed row、教师标签不在其动作掩码内，或任一动作头没有标签覆盖时，数据集直接取消资格；报告同时记录地图/模式覆盖、回退率和连续重复决策率。
 5. mask-aware BC 从合法教师决策训练四个策略头，形成 RL 初始 checkpoint；BC 模型仅作为候选，不自动写入 catalog。
 
 ### 3.2 Godot 战术 Step API

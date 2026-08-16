@@ -150,7 +150,7 @@ advantages = rewards - old_values
 3. `training/rl/online_trainer.py` 增加 GAE。
 4. rollout storage 保存 sequence、done、hidden state。
 5. `training/inference/model_runtime.py` 增加 recurrent hidden state 推理路径。
-6. 增加 checkpoint gate，自动调用 `training.inference.diagnose_policy`。
+6. 增加 checkpoint gate，自动调用 `training.diagnose_policy`。
 
 ### 阶段 1：重新采集 warm-start replay
 
@@ -234,9 +234,9 @@ python training/train_pipeline.py --profile full_distributed_league --plan full_
 python training/train_pipeline.py --profile full_distributed_league --plan full_league --phase validate
 python training/train_pipeline.py --profile full_distributed_league --plan full_league --phase collect --execute
 python training/train_pipeline.py --profile full_distributed_league --plan full_league --phase bc --execute
-python -m training.inference.diagnose_policy --model-id <bc_model_id> --fail-on-collapse
+python -m training.diagnose_policy --model-id <bc_model_id> --fail-on-collapse
 python training/train_pipeline.py --profile full_distributed_league --plan full_league --phase ppo --execute
-python -m training.inference.diagnose_policy --model-id <new_ppo_model_id> --fail-on-collapse
+python -m training.diagnose_policy --model-id <new_ppo_model_id> --fail-on-collapse
 ```
 
 完整重训完成后，只有通过 gate 的模型才能写入：

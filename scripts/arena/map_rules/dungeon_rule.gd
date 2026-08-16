@@ -111,7 +111,7 @@ func _apply_trap_damage(player) -> void:
 		damage = player.balance.projectile_damage
 	var root = arena_map.get_parent() if arena_map != null else null
 	if root != null and root.has_method("apply_environment_damage"):
-		root.apply_environment_damage(player, damage)
+		root.apply_environment_damage(player, damage, "dungeon_trap")
 	elif player != null and player.has_method("take_damage"):
 		player.take_damage(damage, -1)
 

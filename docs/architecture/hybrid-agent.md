@@ -97,7 +97,7 @@ v1 `cmd=act` 仅作为归档 raw-action checkpoint 的兼容协议保留。
 启动 v2 服务：
 
 ```bash
-python -m training.inference.serve_agent --host 127.0.0.1 --port 8766
+python -m training.serve_agent --host 127.0.0.1 --port 8766
 ```
 
 Hybrid headless smoke：

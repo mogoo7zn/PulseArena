@@ -29,7 +29,7 @@ AgentObservation
 
 ## 阶段 1：显式战术教师和 replay 采集
 
-`scripts/agents/hybrid/tactical_teacher.gd` 会把公开观测转成真实高层标签，不再固定写 `USE_SCRIPTED_*`：
+`scripts/agents/tactical_teacher.gd` 会把公开观测转成真实高层标签，不再固定写 `USE_SCRIPTED_*`：
 
 - 高危子弹：`EVADE_PROJECTILE`，必要时 `DASH_EVADE` 或 `SHIELD`
 - 低血/低能量：`SEEK_COVER`、`RETREAT`、`CONSERVATIVE`
@@ -58,7 +58,7 @@ AgentObservation
 训练入口：
 
 ```bash
-python training/train_pipeline.py \
+python training/pipeline/train_pipeline.py \
   --profile full_distributed_league \
   --plan hybrid_tactical_v2_server_bc \
   --phase bc \
@@ -86,6 +86,17 @@ BC trainer 会：
 - 部署 actor 不读取隐藏敌人状态
 
 不要复用旧 `training/rl/online_trainer.py` 作为正式训练入口；它是 raw-action PPO，会绕开 Hybrid Tactical v2 的底层执行器。
+
+已接入的 8 卡入口是任务编排层，不是单 run 多卡同步 learner。它会启动 8 个独立 protocol-v2 tactical PPO worker，各自独占 GPU、Godot 端口和输出目录：
+
+```bash
+python training/pipeline/train_pipeline.py \
+  --profile full_distributed_league \
+  --plan hybrid_tactical_v2_8gpu_parallel_pilot \
+  --phase ppo-multi
+```
+
+dry-run 确认 GPU/端口/日志分配无误后再添加 `--execute`。
 
 ## 服务器资源建议
 
@@ -115,9 +126,9 @@ bash training/server_train_hybrid_tactical_v2.sh
 也可以分阶段执行：
 
 ```bash
-python training/train_pipeline.py --profile full_distributed_league --plan hybrid_tactical_v2_server_bc --phase validate
-python training/train_pipeline.py --profile full_distributed_league --plan hybrid_tactical_v2_server_bc --phase collect --execute
-python training/train_pipeline.py --profile full_distributed_league --plan hybrid_tactical_v2_server_bc --phase bc --execute --swanlab-mode offline
+python training/pipeline/train_pipeline.py --profile full_distributed_league --plan hybrid_tactical_v2_server_bc --phase validate
+python training/pipeline/train_pipeline.py --profile full_distributed_league --plan hybrid_tactical_v2_server_bc --phase collect --execute
+python training/pipeline/train_pipeline.py --profile full_distributed_league --plan hybrid_tactical_v2_server_bc --phase bc --execute --swanlab-mode offline
 ```
 
 ## 模型回收
@@ -125,15 +136,15 @@ python training/train_pipeline.py --profile full_distributed_league --plan hybri
 服务器训练完成后，把 checkpoint 和 metrics 放到：
 
 ```text
-training/incoming_models/
+training/data/incoming_models/
 ```
 
 然后本地导入：
 
 ```bash
-python training/import_trained_model.py \
-  --checkpoint training/incoming_models/hybrid_tactical_v2_bc_s01.pt \
-  --metrics-json training/incoming_models/hybrid_tactical_v2_bc_s01_metrics.json \
+python training/model_io/import_trained_model.py \
+  --checkpoint training/data/incoming_models/hybrid_tactical_v2_bc_s01.pt \
+  --metrics-json training/data/incoming_models/hybrid_tactical_v2_bc_s01_metrics.json \
   --model-id hybrid_tactical_v2_bc_s01 \
   --run-id hybrid_tactical_v2_bc_s01 \
   --hidden 256 \
@@ -142,7 +153,7 @@ python training/import_trained_model.py \
 
 导入后：
 
-- checkpoint 进入 `training/checkpoints/hybrid/`
+- checkpoint 进入 `training/artifacts/checkpoints/hybrid/`
 - manifest 进入 `training/models/`
 - 可选更新 `training/models/model_catalog.json`
 
@@ -164,10 +175,10 @@ python training/import_trained_model.py \
 长期保留：
 
 - `training/configs/training_plans/*.json`
-- `training/runs/<run_id>/metrics.csv`
-- `training/runs/<run_id>/metrics.png`
-- `training/runs/<run_id>/swanlab/`
-- `training/experiments/<line>/README.md`
+- `training/artifacts/runs/<run_id>/metrics.csv`
+- `training/artifacts/runs/<run_id>/metrics.png`
+- `training/artifacts/runs/<run_id>/swanlab/`
+- `training/data/experiments/<line>/README.md`
 - 导入后的 manifest 和 catalog
 
 论文整理时，每个阶段至少记录：

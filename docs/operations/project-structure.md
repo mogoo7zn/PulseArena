@@ -129,17 +129,19 @@ scenes/
 
 ```text
 scripts/
-├─ app/
-├─ arena/
-├─ audio/
-├─ config/
-├─ controllers/
-├─ core/
-├─ debug/
-├─ gameplay/
-├─ replay/
-├─ rl/
-└─ ui/
+├─ agents/        # hybrid tactical agent (decision + deterministic executors)
+├─ app/           # bootstrap + main
+├─ arena/         # arena controllers + per-map rules
+├─ audio/         # audio bus manager
+├─ config/        # balance / match / reward / difficulty configs
+├─ controllers/   # player controllers (human, agent, replay, ...)
+├─ core/          # events, flow, input, match, score, settings
+├─ debug/         # debug overlays (F3 / canvas DEBUG button)
+├─ gameplay/      # player, projectile, visual helpers
+├─ ops/           # shell scripts: bootstrap, export, web preview
+├─ replay/        # JSONL replay recorder
+├─ rl/            # action, observation, environment bridge, reward
+└─ ui/            # HUD, menu, status card
 ```
 
 ### `scripts/app/`
@@ -213,7 +215,7 @@ scripts/
 - `environment_bridge.gd`：Godot 与外部训练环境的桥接。
 - `training_runner.gd`：头less 自动对局和训练 smoke 运行入口。
 
-### `scripts/agents/hybrid/`
+### `scripts/agents/`
 
 - `tactical_decision.gd`：版本化高层动作 schema 和 action mask 修正。
 - `tactical_feature_builder.gd`：v2 tactical features 和 action masks。
@@ -264,15 +266,19 @@ scripts/
 
 ```text
 training/
-├─ configs/
-├─ inference/
-├─ models/
-├─ replays/
-├─ rl/
-├─ estimate_resources.py
-├─ run_stage.py
-├─ train_pipeline.py
-└─ README.md
+├─ pipeline/       # 入口：run_stage.py + train_pipeline.py
+├─ evaluation/     # baseline_audit.py + evaluate_tactical_candidate.py
+├─ model_io/       # import_trained_model.py + migrate_legacy_checkpoint.py
+├─ orchestration/  # multi_gpu_orchestrator.py + package_server_bundle.py + estimate_resources.py
+├─ inference/      # serve_agent.py + model_runtime.py + diagnose_policy.py
+├─ rl/             # 算法与 replay 编码（tactical_ppo、tactical_bc_trainer、tactical_online_trainer、encoding、godot_env、models、replay_integrity、swanlab_utils、league）
+├─ server_agent/   # preflight、prepare_hybrid_replays、audit_hybrid_replays、tactical_data_quality
+├─ tools/          # 历史归档脚本（archive_pre_draw_fix_runs.py）
+├─ configs/        # 训练计划、profile、奖励、GPU 资源、multi_gpu、local_settings
+├─ models/         # model_catalog.json + 候选 agent manifest
+├─ data/           # 输入：replays / incoming_models / experiments
+├─ artifacts/      # 输出：runs / checkpoints / packages / godot_user
+└─ server_train_hybrid_tactical_v2.sh
 ```
 
 - `training/configs/curriculum.json`：完整课程阶段，从基础战斗到人类评测微调。
@@ -282,11 +288,11 @@ training/
 - `training/configs/training_plans/hybrid_tactical_full.json`：默认服务器 Hybrid Tactical 训练计划。
 - `training/inference/serve_agent.py`：v2 tactical 推理服务。
 - `training/models/model_catalog.json`：当前活动模型目录，只保留可用于默认入口的模型。
-- `training/replays/`：新采集的 `hybrid_replay_v2` replay 输出目录。
+- `training/data/replays/`：新采集的 `hybrid_replay_v2` replay 输出目录。
 - `training/rl/tactical_bc_trainer.py`：高层 tactical decision 行为克隆训练器。
-- `training/run_stage.py`：生成或执行 Godot headless 阶段 smoke 命令。
-- `training/train_pipeline.py`：统一训练流水线入口，负责 validate/collect/bc/ppo 阶段调度。
-- `training/estimate_resources.py`：汇总训练步数和显卡资源档位。
+- `training/pipeline/run_stage.py`：生成或执行 Godot headless 阶段 smoke 命令。
+- `training/pipeline/train_pipeline.py`：统一训练流水线入口，负责 validate/collect/bc/ppo 阶段调度。
+- `training/orchestration/estimate_resources.py`：汇总训练步数和显卡资源档位。
 - `training/README.md`：训练目录使用说明。
 
 ## `tests/` 测试目录

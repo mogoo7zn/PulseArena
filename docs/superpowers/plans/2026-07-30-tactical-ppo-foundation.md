@@ -67,7 +67,7 @@ Run:
 .conda/bin/python -m unittest tests.unit.test_tactical_data_quality -v
 .conda/bin/python training/server_agent/tactical_data_quality.py \
   --replay-dir training/replays \
-  --output training/runs/tactical_data_quality.json
+  --output training/artifacts/runs/tactical_data_quality.json
 ```
 
 Expected: tests pass and the JSON report states whether the current dataset is eligible for BC/RL warm start without modifying the catalog.
@@ -160,7 +160,7 @@ Run the new unit suite and a one-batch CUDA update with synthetic legal masks. A
 **Files:**
 - Modify: `training/rl/godot_env.py`
 - Create: `training/rl/tactical_online_trainer.py`
-- Modify: `training/train_pipeline.py`
+- Modify: `training/pipeline/train_pipeline.py`
 - Create: `training/configs/training_plans/hybrid_tactical_v2_ppo_pilot.json`
 - Create: `tests/unit/test_tactical_online_trainer.py`
 
@@ -195,7 +195,7 @@ Run unit tests, one short headless tactical-step integration run, then a bounded
 ### Task 5: Fixed-seed evaluation and promotion report
 
 **Files:**
-- Create: `training/evaluate_tactical_candidate.py`
+- Create: `training/evaluation/evaluate_tactical_candidate.py`
 - Create: `tests/unit/test_evaluate_tactical_candidate.py`
 - Modify: `training/configs/evaluation_matrix.json`
 - Modify: `docs/training/高层战术强化学习训练方案.md`

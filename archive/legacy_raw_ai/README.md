@@ -12,7 +12,7 @@ not part of the active menu, active model catalog, or default training plan.
 To reproduce a legacy policy explicitly:
 
 ```powershell
-python -m training.inference.serve_agent --manifest archive\legacy_raw_ai\manifests\ppo_10m.json --host 127.0.0.1 --port 8766
+python -m training.serve_agent --manifest archive\legacy_raw_ai\manifests\ppo_10m.json --host 127.0.0.1 --port 8766
 ```
 
 ## Layout

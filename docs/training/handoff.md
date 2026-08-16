@@ -9,8 +9,8 @@ Observation schema version: `2`
 Tactical feature schema version: `2`
 
 - feature dim: `142`
-- 入口：`training.rl.encoding.TACTICAL_FEATURE_DIM`
-- Godot 入口：`scripts/agents/hybrid/tactical_feature_builder.gd`
+- 入口：`training.encoding.TACTICAL_FEATURE_DIM`
+- Godot 入口：`scripts/agents/tactical_feature_builder.gd`
 - Python 入口：`training/rl/encoding.py`
 
 ## Tactical Action Schema
@@ -92,7 +92,7 @@ Replay schema: `hybrid_replay_v2`
 
 旧 raw replay 不应作为 tactical trainer 默认输入。Python raw loader 已跳过 `hybrid_replay_v2` 行；tactical loader 使用 `load_hybrid_replay_arrays()`。
 
-`teacher_decision` 由 `scripts/agents/hybrid/tactical_teacher.gd` 生成显式高层标签，不再固定记录 `USE_SCRIPTED_*`。`label_weight` 和 `label_confidence` 会被 mask-aware BC trainer 使用；旧 replay 中纯脚本委托标签会被自动降权。
+`teacher_decision` 由 `scripts/agents/tactical_teacher.gd` 生成显式高层标签，不再固定记录 `USE_SCRIPTED_*`。`label_weight` 和 `label_confidence` 会被 mask-aware BC trainer 使用；旧 replay 中纯脚本委托标签会被自动降权。
 
 ## Checkpoint Schema
 
@@ -112,7 +112,7 @@ input_dim=142
   "schema_version": 2,
   "model_id": "hybrid_tactical_<run_id>",
   "kind": "tactical_policy",
-  "checkpoint": "training/checkpoints/hybrid/<run_id>.pt",
+  "checkpoint": "training/artifacts/checkpoints/hybrid/<run_id>.pt",
   "input_dim": 142,
   "hidden": 192,
   "protocol": 2,
@@ -121,14 +121,14 @@ input_dim=142
 }
 ```
 
-PyTorch model: `training.rl.models.TacticalPolicyNet`
+PyTorch model: `training.models.TacticalPolicyNet`
 
 ## 推理协议
 
 Server command:
 
 ```bash
-python -m training.inference.serve_agent --host 127.0.0.1 --port 8766
+python -m training.serve_agent --host 127.0.0.1 --port 8766
 ```
 
 Request command: `act_tactical`
@@ -178,7 +178,7 @@ godot --headless --path . -- --training --matches=100 --agents=4 --seed=9000 --s
 
 ```python
 from pathlib import Path
-from training.rl.encoding import load_hybrid_replay_arrays
+from training.core.encoding import load_hybrid_replay_arrays
 
 arrays = load_hybrid_replay_arrays(Path("training/replays"), decision_key="teacher_decision")
 ```

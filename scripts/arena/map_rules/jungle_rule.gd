@@ -183,7 +183,7 @@ func _update_swamp_damage_timers(delta: float) -> void:
 func _apply_swamp_damage(player, amount: float) -> void:
 	var root = arena_map.get_parent() if arena_map != null else null
 	if root != null and root.has_method("apply_environment_damage"):
-		root.apply_environment_damage(player, amount)
+		root.apply_environment_damage(player, amount, "jungle_swamp")
 	elif player != null and player.has_method("take_damage"):
 		player.take_damage(amount, -1)
 
@@ -317,7 +317,7 @@ func _try_snake_bite(snake: Dictionary, player) -> void:
 		player.add_movement_lock(0.08)
 	var root = arena_map.get_parent() if arena_map != null else null
 	if root != null and root.has_method("apply_environment_damage"):
-		root.apply_environment_damage(player, SNAKE_BITE_DAMAGE)
+		root.apply_environment_damage(player, SNAKE_BITE_DAMAGE, "jungle_snake")
 	elif player != null and player.has_method("take_damage"):
 		player.take_damage(SNAKE_BITE_DAMAGE, -1)
 

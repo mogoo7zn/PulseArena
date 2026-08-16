@@ -19,13 +19,13 @@ kind: hybrid_tactical_prior
 启动默认服务：
 
 ```bash
-python -m training.inference.serve_agent --host 127.0.0.1 --port 8766
+python -m training.serve_agent --host 127.0.0.1 --port 8766
 ```
 
 查看当前加载内容：
 
 ```bash
-python -m training.inference.serve_agent --print-info
+python -m training.serve_agent --print-info
 ```
 
 Hybrid 请求使用 `act_tactical`：

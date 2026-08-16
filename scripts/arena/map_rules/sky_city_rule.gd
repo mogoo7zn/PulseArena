@@ -165,7 +165,7 @@ func _is_squeezed_by_obstacle(rect: Rect2, point: Vector2, radius: float) -> boo
 func _kill_squeezed_player(player) -> void:
 	var root = arena_map.get_parent() if arena_map != null else null
 	if root != null and root.has_method("kill_player_by_environment"):
-		root.kill_player_by_environment(player)
+		root.kill_player_by_environment(player, "sky_squeeze")
 	elif player.has_method("kill_by_environment"):
 		player.kill_by_environment()
 	elif player.has_method("take_damage"):

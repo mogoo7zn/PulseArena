@@ -15,7 +15,7 @@ htmlcov/
 .env
 .env.*
 !.env.example
-training/local_settings.json
+training/configs/local_settings.json
 
 # Godot and local tools
 .godot/
@@ -23,7 +23,7 @@ training/local_settings.json
 .tools/
 .superpowers/
 .worktrees/
-training/godot_user/
+training/artifacts/godot_user/
 
 # Generated outputs
 dist/
@@ -32,16 +32,16 @@ logs/
 tmp/
 test-results/
 build/
-training/packages/
+training/artifacts/packages/
 
 # Training artifacts
-training/runs/
+training/artifacts/runs/
 training/swanlab/
-training/checkpoints/
+training/artifacts/checkpoints/
 training/data_cache/
 training/eval_results/
-training/replays/*
-!training/replays/.gitkeep
+training/data/replays/*
+!training/data/replays/.gitkeep
 training/replays_decision/
 *.onnx
 *.pt

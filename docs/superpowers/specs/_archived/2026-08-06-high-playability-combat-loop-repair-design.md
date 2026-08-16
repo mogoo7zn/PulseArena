@@ -58,9 +58,11 @@ configuration to the tactical teacher:
 2. Run a short four-map collection/diagnostic on GPU 4 to establish whether the
    new behavior actually raises authorized-fire opportunity and records a
    cover-to-reengage loop.
-3. Run a GPU-4 PPO diagnostic only if collection is valid and covers all maps.
-   It warm-starts from the audited four-map BC checkpoint and remains a
-   non-deployed candidate.
+3. Train a fresh, isolated four-map BC checkpoint from that collection, then
+   run a GPU-4 PPO diagnostic warm-started from the fresh checkpoint.  This
+   ensures the repaired cover-to-reengage teacher behavior reaches the PPO
+   prior while preserving the same reward-profile identifier.  The candidate
+   remains non-deployed.
 4. Promote to a larger PPO run only if all guardrails hold: zero raw-action
    fallback, no safety-override regression, no map omitted, more authorized
    fire than the 1.2% diagnostic baseline without a material hit-rate collapse,

@@ -7,13 +7,13 @@
 在本地工程根目录运行：
 
 ```bash
-python training/package_server_bundle.py
+python training/orchestration/package_server_bundle.py
 ```
 
 输出位置：
 
 ```text
-training/packages/
+training/artifacts/packages/
 ```
 
 会生成：
@@ -63,9 +63,9 @@ bash training/server_train_hybrid_tactical_v2.sh
 等价分步命令：
 
 ```bash
-python training/train_pipeline.py --profile full_distributed_league --plan hybrid_tactical_v2_server_bc --phase validate
-python training/train_pipeline.py --profile full_distributed_league --plan hybrid_tactical_v2_server_bc --phase collect --execute
-python training/train_pipeline.py --profile full_distributed_league --plan hybrid_tactical_v2_server_bc --phase bc --execute --swanlab-mode offline
+python training/pipeline/train_pipeline.py --profile full_distributed_league --plan hybrid_tactical_v2_server_bc --phase validate
+python training/pipeline/train_pipeline.py --profile full_distributed_league --plan hybrid_tactical_v2_server_bc --phase collect --execute
+python training/pipeline/train_pipeline.py --profile full_distributed_league --plan hybrid_tactical_v2_server_bc --phase bc --execute --swanlab-mode offline
 ```
 
 ## 训练结果
@@ -73,8 +73,8 @@ python training/train_pipeline.py --profile full_distributed_league --plan hybri
 默认输出：
 
 ```text
-training/replays/
-training/runs/hybrid_tactical_v2_bc_s01/
+training/data/replays/
+training/artifacts/runs/hybrid_tactical_v2_bc_s01/
 ```
 
 关键文件：
@@ -85,12 +85,12 @@ training/runs/hybrid_tactical_v2_bc_s01/
 - `metrics.png`
 - `swanlab/`
 
-把 `best_tactical_policy.pt` 和关键 metrics 拷回本地 `training/incoming_models/` 后，用：
+把 `best_tactical_policy.pt` 和关键 metrics 拷回本地 `training/data/incoming_models/` 后，用：
 
 ```bash
-python training/import_trained_model.py \
-  --checkpoint training/incoming_models/hybrid_tactical_v2_bc_s01.pt \
-  --metrics-json training/incoming_models/hybrid_tactical_v2_bc_s01_metrics.json \
+python training/model_io/import_trained_model.py \
+  --checkpoint training/data/incoming_models/hybrid_tactical_v2_bc_s01.pt \
+  --metrics-json training/data/incoming_models/hybrid_tactical_v2_bc_s01_metrics.json \
   --model-id hybrid_tactical_v2_bc_s01 \
   --run-id hybrid_tactical_v2_bc_s01 \
   --hidden 256 \
@@ -103,5 +103,5 @@ python training/import_trained_model.py \
 
 ```text
 解压训练包，进入目录，设置 GODOT_BIN，运行 bash training/server_train_hybrid_tactical_v2.sh。
-训练结束后，汇总 training/runs/hybrid_tactical_v2_bc_s01/ 下的 checkpoint、metrics.csv、metrics.png 和日志。
+训练结束后，汇总 training/artifacts/runs/hybrid_tactical_v2_bc_s01/ 下的 checkpoint、metrics.csv、metrics.png 和日志。
 ```

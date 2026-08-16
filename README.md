@@ -109,9 +109,9 @@ The current runner starts a single Arena in-process and exits with printed JSON 
 Training stages and hardware estimates live under `training/`:
 
 ```bash
-python training/run_stage.py --list
-python training/run_stage.py --stage 01_foundation_combat
-python training/estimate_resources.py
+python training/pipeline/run_stage.py --list
+python training/pipeline/run_stage.py --stage 01_foundation_combat
+python training/orchestration/estimate_resources.py
 ```
 
 ## Tests
@@ -179,13 +179,16 @@ make web-stop
 - `scripts/gameplay/player.gd`, `projectile.gd`: current runtime character/projectile drawing and animation; kept self-contained so gameplay does not depend on indirect renderer helper chains.
 - `scripts/gameplay/character_animation_controller.gd`, `character_renderer.gd`, `weapon_renderer.gd`, `world_health_bar.gd`, `projectile_renderer.gd`, `combat_feedback_controller.gd`, `camera_effects.gd`: retained prototypes/reference modules; normal gameplay scenes do not instantiate them.
 - `scripts/arena/map_rules`: per-map runtime rules. `dungeon_rule.gd` controls cage traps, `sky_city_rule.gd` controls moving/resizing blockers, `jungle_rule.gd` controls swamp slow zones, and `mist_world_rule.gd` controls fog visibility zones.
+- `scripts/agents/`: hybrid tactical agent — high-level decision (`tactical_decision.gd`) + deterministic low-level execution (fire/cover/movement/stuck/aim solvers).
 - `scripts/controllers`: human/agent/remote/ONNX/replay controller interfaces.
 - `scripts/rl`: action, observation, bridge, reward, training runner, visibility filtering.
 - `scripts/replay`: JSONL replay recorder.
-- `training/`: staged curriculum configs, evaluation matrix, GPU resource estimate, and headless job launcher.
+- `scripts/ops`: shell scripts for environment setup, export, and web preview.
+- `training/`: staged Python training pipeline — `pipeline/`, `rl/`, `inference/`, `evaluation/`, `model_io/`, `orchestration/`, `server_agent/`, `configs/`, `models/`, `data/` (input), `artifacts/` (output).
 - `resources/`: configs, themes, map resources.
 - `tests/`: Godot and static smoke tests.
 - `docs/`: architecture and interface notes.
+- `archive/`: legacy raw-AI artifacts and smoke replays (read-only).
 
 ## Agent Interface
 
@@ -226,7 +229,7 @@ Add a scene or map builder under `scenes/arena` / `scripts/arena`, expose wall r
 Recommended entry points:
 
 - `scripts/controllers/hybrid_agent_controller.gd` for protocol v2 tactical decisions.
-- `scripts/agents/hybrid/*` for deterministic low-level execution.
+- `scripts/agents/*` for deterministic low-level execution.
 - `scripts/rl/environment_bridge.gd` for reset/step/batch observation APIs.
 - `scripts/rl/reward_calculator.gd` for reward shaping.
 - `scripts/controllers/remote_agent_controller.gd` for Python socket or IPC actions.
