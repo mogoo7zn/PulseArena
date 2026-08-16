@@ -230,3 +230,144 @@ CUDA_VISIBLE_DEVICES=0 HOME="$PWD/.tools/godot-user" .conda/bin/python tests/smo
 ### 当前状态
 
 **未动 `scripts/`、`training/core/`、`training/server/`、`training/pipelines/`、`docs/`、`archive/`、`tests/`、`Makefile`、`.github/` 等任何文件**——本轮只读不写。phase 0 阻塞已记录，等待用户决策 ROOT 修复 + git dirty 处理 + 目录归档三件事后再进入阶段 1。
+
+## phase 0 收尾与阶段 1（2026-08-16）
+
+### 用户决策（接 phase 0 之后）
+
+1. **CLI ROOT 修复**：同意单字符路径常量修复（`training/pipelines/train_pipeline.py` 第 12 行 `parents[1]` → `parents[2]`）。
+2. **git dirty**：按主题拆分（多次提交）。详见 git log。
+3. **GPU-4 旧目录**：归档（`mv training/artifacts/runs/legal_window_pressure/ballistic_repair_gpu4 → archived/pre_draw_fix/ballistic_repair_gpu4_20260804_legacy`）。
+4. **3 个幽灵候选**：归档（`mv training/models/pressure_*.json → archived/ghost_candidates/`）。
+
+### git log（按主题拆分）
+
+```text
+546edb7 refactor(training): split training/ into training/{core,server,evaluation,inference,pipelines}
+0776f42 test: update test suite for reorganized training pipeline
+4fc4134 refactor(scripts): relocate scripts/linux/ → scripts/ops/
+43942cb refactor(scripts): finish scripts/agents/hybrid/ removal + cascade updates
+e4b53ee refactor(scripts/agents): flatten scripts/agents/hybrid/ → scripts/agents/
+b74d2a7 docs(training): drop stale legacy snapshot of tactical-rl-progress
+385aca6 docs(repo): reorganize docs/ tree, archive 08-04 / 08-06 / 08-08 design & plan files
+43f860d fix(training): correct ROOT path after training/pipeline → training/pipelines move
+```
+
+工作区剩余未跟踪：`/.claude/`、`/.gemini/`（agent 工作区文件，不入库）。
+
+### 阶段 1：BC 结果（collect 跳过——replay 已就位）
+
+`training/data/replays/four_map_ballistic_repair_bc/` 已有 32 个 `*.hybrid_v2.jsonl`（4 图 × 8 局，每局 ≈7200 行，228,266 总样本，2026-08-08 收集，map_id 0/1/2/3 各 8 平衡分布；与 `02-` §3 的"预期"完全匹配），跳过 collect 直接 BC。
+
+```bash
+CUDA_VISIBLE_DEVICES=4 MPLCONFIGDIR="$PWD/test-results/matplotlib" \
+  .conda/bin/python training/pipelines/train_pipeline.py \
+    --profile local_constrained \
+    --plan tactical_legal_window_pressure_four_map_ballistic_repair \
+    --phase bc --execute
+```
+
+BC 数字（40 epoch，415.26s）：
+
+| head | val_acc | 门槛 | 状态 |
+|---|---|---|---|
+| target | 0.9925 | ≥ 0.85 | ✅ |
+| movement | 0.9201 | ≥ 0.85 | ✅ |
+| fire | 0.9186 | ≥ 0.85 | ✅ |
+| skill | 0.9955 | ≥ 0.85 | ✅ |
+| best_val_loss | 0.4400 (epoch 36) | — | ✅ |
+
+产物：`training/artifacts/runs/four_map_ballistic_repair_bc/best_tactical_policy.pt`、`metrics.csv`、`metrics.png`、`swanlab/`。
+
+### 阶段 1：PPO 进行中
+
+```bash
+CUDA_VISIBLE_DEVICES=4 MPLCONFIGDIR="$PWD/test-results/matplotlib" \
+GODOT_BIN="$PWD/.tools/godot-4.7.1/Godot_v4.7.1-stable_linux.x86_64" \
+  .conda/bin/python training/pipelines/train_pipeline.py \
+    --profile local_constrained \
+    --plan tactical_legal_window_pressure_four_map_ballistic_repair \
+    --phase ppo --execute \
+    --output-dir training/artifacts/runs/legal_window_pressure/ballistic_repair_gpu4 \
+    --port 18961 --seed 20261086
+```
+
+- 计划 `total_env_steps=16,384`，`rollout_steps=256`，预计 64 update × 64 episode；
+- 输出：`training/artifacts/runs/legal_window_pressure/ballistic_repair_gpu4/{best_tactical_ppo.pt, last_tactical_ppo.pt, metrics.jsonl, config.json, rollout_audit.json}`；
+- BC warm-start：`training/artifacts/runs/four_map_ballistic_repair_bc/best_tactical_policy.pt`；
+- 后台运行中——稍后回填 `metrics.jsonl` 与 `rollout_audit.json` 的硬门槛数字。
+
+### 第一次 PPO 失败 + 修复
+
+第一次 PPO 启动 30 秒后退出 (`step_ipc_unavailable`)：Godot 训练 server 报 `Class "HighLevelDecision" hides a global script class`。根因是 `scripts/agents/hybrid/` → `scripts/agents/` 扁平化后，`.godot/global_script_class_cache.cfg`（gitignored）里仍有 11 条指向旧 `res://scripts/agents/hybrid/*.gd` 的注册条目。Godot 把新 `class_name HighLevelDecision` 当成与旧条目冲突。
+
+修复：
+
+```bash
+rm .godot/global_script_class_cache.cfg
+HOME="$PWD/.tools/godot-user" timeout 60 \
+  .tools/godot-4.7.1/Godot_v4.7.1-stable_linux.x86_64 \
+    --headless --editor --quit
+```
+
+`tests/run_tests.gd` 第二次跑 `PASS: Godot unit tests`；训练 server 启动打印 `{"host":"127.0.0.1","port":18766,"training_server":"listening"}`。再启动 PPO——继续监控中。
+
+### PPO 完成（阶段 1 第二次跑）
+
+PPO exit 0。`training/artifacts/runs/legal_window_pressure/ballistic_repair_gpu4/`：
+- `best_tactical_ppo.pt`（439 KB）、`last_tactical_ppo.pt`、`metrics.jsonl`（4.6 KB / 18 update + 1 final）、`config.json`、`rollout_audit.json`（46.9 KB）。
+
+`metrics.jsonl` 关键数字（18 update / env_steps=17,092 / episodes=4）：
+
+| update | env_steps | rollout_reward | policy_loss | value_loss | entropy | approx_kl | clip_fraction |
+|---|---|---|---|---|---|---|---|
+| 1 | 1024 | **8.92** | 1.39e-4 | 3.004 | 0.551 | 1.07e-6 | 0.0 |
+| 4 | 3780 | 4.6 | 7.23e-3 | 1.182 | 0.735 | 1.93e-2 | 0.305 |
+| 9 | 8584 | 0.16 | -4.13e-3 | 0.033 | 0.297 | 6.48e-4 | 0.011 |
+| 18 | 17092 | 4.32 | -1.88e-3 | 0.195 | 0.251 | 2.92e-4 | 0.004 |
+
+> 注：plan §5 期望 `updates=64 / episodes=64`；实际 `updates=18 / episodes=4`。差距来自**每个 episode = 60 秒游戏 + Godot 仿真开销**（不是 256 env-step = 1 episode）。`total_env_steps=17,092` 已超出 `total_env_steps=16,384` 目标，update 数与 `total_env_steps / rollout_steps` 比例一致。
+
+`rollout_audit.json` 关键数字：
+
+| 维度 | 值 |
+|---|---|
+| `tactical_step_calls` | 4,273 |
+| `transitions` | 4,273 |
+| `raw_step_calls` | 0 |
+| `fallback_count` | 0 |
+| `decision_generation_consistent` | true |
+| `event_counter_consistent` | true |
+| `map_episode_counts` | dungeon:2, sky_city:1, jungle:1, mist_world:1 |
+| `tactical_event_counts.fire_intent` / `fire_authorized` | 814 / 44 = **5.41%**（基线 1.57%） |
+| `fire_mode_distribution` | HOLD_FIRE:3262 / NORMAL:572 / CONSERVATIVE:409 / BURST:26 / ALL_IN:4 |
+| `fire_block_reasons` | reserved_energy:623 / weapon_cooldown:146 / low_hit_probability:6 |
+| `map_line_of_sight_block_counts` | {}（**空**——ballistic lane repair 生效，LoS 改成 vantage 路由，不再算作 block 原因） |
+| `reserved_energy_by_basis` | projectile_threat:474 / conservative:132 / shield_ready:15 / dash_ready:2 |
+| `map_reserved_energy_by_basis`（每图） | 4 个非零项均覆盖 |
+| `cover_entry_count` | 41 |
+| `cover_reengage_count` | 22 |
+| `safety_override_count` / `reasons` | 346 / emergency_projectile:346 |
+| `target_valid_count` / `target_change_count` | 3,959 / 388 |
+| `reward_component_totals` | damage_dealt:13.6 / kill:3 / damage_taken:-2.6 / win:5.0 |
+| `map_environment_event_counts` | jungle: swamp:13, snake:22 / mist_world: portal:1, fog:4 |
+| `map_resource_event_counts` | jungle: pickup_collected_health:1, pickup_collected_haste:1 / mist_world: pickup_collected_magnet:1 |
+
+### 阶段 1 退出条件检查（按 01- §阶段 1）
+
+| 门槛 | 结果 |
+|---|---|
+| `raw_step_calls == 0` | ✅ 0 |
+| `fallback_rate == 0` | ✅ 0 |
+| `decision_generation_consistent == true` & `audit_consistency_flags == true` | ✅ 都 true |
+| 4 张地图都有 episodes | ✅ 2/1/1/1 |
+| `fire_authorized / fire_intent >= 0.015` | ✅ 5.41%（基线 1.57%，本阶段目标 1.5%） |
+| Sky/Mist LoS 块 < 68.4% / 72.0% & reserve basis 可识别 | ✅ `map_line_of_sight_block_counts: {}`（修复后空）；reserve basis 4 个非零（projectile_threat / conservative / shield_ready / dash_ready） |
+
+附加观察：cover_entry=41、cover_reengage=22、`authorized_damage=340`、`authorized_hit=17`、`map_environment_event_counts` 真有 jungle swamp/snake + mist portal/fog、`map_resource_event_counts` 真有 pickup 收集 → 04-06/08-08 修复方向**真的有效**。
+
+**阶段 1 通过** → 进入阶段 2（TDD 红→绿循环）。
+
+### 阶段 1 产物备份
+
+按 02- §7：把这次数字 append 到 progress（已做）；run 目录保留在 `training/artifacts/runs/legal_window_pressure/ballistic_repair_gpu4/`（未改名——阶段 1 唯一一次跑，没有要回滚的版本）。
