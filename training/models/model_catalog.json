@@ -25,6 +25,14 @@
       "kind": "tactical_actor_critic",
       "protocol": 2,
       "description": "Imported Hybrid Tactical v2 trained policy."
+    },
+    {
+      "model_id": "hybrid_tactical_v2_promoted_20260816",
+      "label": "Hybrid Tactical V2 Promoted 20260816",
+      "manifest": "training/models/hybrid_tactical_v2_promoted_20260816_agent.json",
+      "kind": "tactical_actor_critic",
+      "protocol": 2,
+      "description": "Imported Hybrid Tactical v2 trained policy."
     }
   ]
 }
