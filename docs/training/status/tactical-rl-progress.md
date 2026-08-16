@@ -525,3 +525,106 @@ PYTHONPATH=. MPLCONFIGDIR="$PWD/test-results/matplotlib" \
 - 删 3938 `.pyc` + 589 `__pycache__/`（gitignored，自动再生）
 - 删错位 import 产物 `training/training/{models,checkpoints}/`
 - 删 test artifact `hybrid_tactical_v2_8gpu_gpu0_TEST{,_FIX}_*`
+
+### 阶段 3 重做 + 阶段 4/5/6 推进（按用户"修复问题后自动进入 4-6 阶段"）
+
+#### 问题修复
+
+| 问题 | 修复 |
+|---|---|
+| TDD 5 个 follow-up | `baseline_audit.py` ROOT + 路径常量、`test_baseline_audit` fixture 路径、`web_preview_package` 隐式修（packager ROOT 修了）—— 全绿 |
+| `evaluate_tactical_candidate.py` 不带 `--godot` 报 [Errno 2] | 命令补全（plan §3.3 示例漏写） |
+| `hybrid_tactical_v2_8gpu_parallel_pilot` per-worker plan 太弱（256 env_steps / foundation）| 新建 `legal_window_pressure_ballistic_repair_8gpu`（16384 env_steps × 8 卡，4 张地图，BC warm-start） |
+| 6 个 ROOT `parents[1]` 应是 `parents[2]` | `import_trained_model.py`、`package_server_bundle.py`、`estimate_resources.py`、`pipelines/run_stage.py`、`evaluate_tactical_candidate.py`、`baseline_audit.py`（前 5 个已修，audit 在这一轮也修了） |
+
+测试结果（5 组）：
+- 1a. Godot unit: PASS
+- 1b. Static check: PASS
+- 2. Python unit: 92/92（85 原有 + 7 新增 strength profile）
+- 3. Protocol smoke: PASS
+- 4. CUDA micro: PASS
+
+#### 阶段 3 重做（8 卡 ballistic_repair）
+
+```bash
+PYTHONPATH=. MPLCONFIGDIR="$PWD/test-results/matplotlib" .conda/bin/python -u training/pipelines/train_pipeline.py \
+  --profile full_distributed_league --plan legal_window_pressure_ballistic_repair_8gpu \
+  --phase ppo-multi --execute
+```
+
+8/8 worker `returncode=0`：
+- env_steps=4270..4273, raw_step_calls=0, fallback_count=0..1, decision_gen_consistent=true
+- 每卡 4 张地图都有 episodes（dungeon:2, sky_city:1, jungle:1, mist_world:1）
+- fire_intent 604..1007 / fire_allowed 8..22
+
+#### 阶段 4：paired eval + 注册
+
+8 个 candidate 都 import 到 `training/models/hybrid_tactical_v2_ballistic_repair_gpu{N}_20260816_agent.json`，8 份 manifest + 8 份 checkpoint。
+
+| gpu | holdout win_rate | top1_rate | safety_override | fallback |
+|---|---|---|---|---|
+| 0 | **1.0** | **1.0** | 0.0916 | 0.0 |
+| 1 | **1.0** | **1.0** | 0.0601 | 0.0014 |
+| 2 | **1.0** | **1.0** | 0.0358 | 0.0014 |
+| 3 | **1.0** | **1.0** | 0.0100 | 0.0014 |
+| 4 | 0.0 | 0.0 | 0.0486 | 0.0 |
+| 5 | 0.0 | 0.0 | 0.0358 | 0.0014 |
+| 6 | **1.0** | **1.0** | 0.0658 | 0.0 |
+| 7 | **1.0** | **1.0** | 0.0429 | 0.0 |
+
+6/8 通过 holdout；选 **gpu2**（safety_override=3.58%，中等活跃度）注册成 `hybrid_tactical_v2_promoted_20260816`，`--update-catalog` 但 `promoted_default=false`——human eval gate 待补（plan §4.5 要求 ≥5 玩家 / ≥0.7 接受率；当前没有玩家数据）。
+
+catalog 现状：`default=hybrid_tactical_v1`，`models=4`（`hybrid_tactical_v1`、`v2_ppo_expanded_candidate_20260802`、`v2_ppo_resume_candidate_20260802`、`v2_promoted_20260816`）。
+
+#### 阶段 5：强度分层（5 档）
+
+**Sampler**（`training/core/ppo/sampling.py`）：
+- 加 `STRENGTH_PROFILES`（5 档温度/mask_soften/safety_threshold 表）
+- `resolve_strength_profile(strength_or_None)` → dict
+- `sample_with_strength_profile(outputs, masks, strength)` 包装
+- `sample_masked_tactical_actions(..., temperature=1.0, mask_soften=0.0)` 加可选参数（默认 1.0/0.0，老路径不变）
+- `_masked_distribution` 加 temperature/mask_soften 应用
+
+测试：`tests/unit/test_sampler_strength_profile.py` 7/7 PASS（默认值 / 未知值抛错 / 严格单调 / entropy 排序 / 默认 temperature=1 / normal 文档值 / temperature 升降 entropy）。
+
+**5 档 manifest**（同一份 checkpoint，5 个不同 model_id）：
+- `hybrid_tactical_v2_promoted_easy_20260816` T=1.6 / soften=0.30 / safe=0.55
+- `hybrid_tactical_v2_promoted_casual_20260816` T=1.1 / soften=0.20 / safe=0.65
+- `hybrid_tactical_v2_promoted_normal_20260816` T=0.85 / soften=0.10 / safe=0.75（默认）
+- `hybrid_tactical_v2_promoted_strong_20260816` T=0.55 / soften=0.05 / safe=0.85
+- `hybrid_tactical_v2_promoted_elite_20260816` T=0.25 / soften=0.0 / safe=0.95
+
+import_trained_model.py 加 `--strength-profile` 标志，把 strength 写进 manifest 的 `inference_profile` 块。
+
+catalog `models=9`（4 + 5 档）。`default_model_id` 仍 `hybrid_tactical_v1`。
+
+**未做**：Godot 菜单 5 档 UI（plan §3.3）—— `scripts/app/main_menu.gd` 加难度选项、`MatchConfig` 加 `difficulty` 字段、`remote_agent_controller.gd` 透传 strength profile。**未做原因**：Godot 端改动不在本轮范围（plan README §1 "不修改业务代码"）。
+
+#### 阶段 6：持续学习闭环（骨架）
+
+`training/evaluation/human_eval_harness.py`：
+- `record_gameplay_as_replay` — 把人对局转 `hybrid_replay_v2` JSONL
+- `replay filter` — 质量门（min_game_duration=30s、drop fallback-only）
+- `strength_tier_monitor` — 7 天滑窗胜率 + 单调性检测 + 目标区间偏离检查
+
+`strength_tier_monitor` CLI：
+```bash
+.conda/bin/python training/evaluation/human_eval_harness.py \
+  monitor --log-dir training/artifacts/human_eval \
+  --output training/artifacts/runs/continual/tier_suggestion_$(date +%Y%m%d).json
+```
+
+**未做**：
+- 真实玩家对局数据（计划要求 ≥3 tester、≥50 局/档、≥10 局/图）
+- `training/continual/build_continual_replay.py`（合并脚本）
+- `training/continual/apply_tier_adjustment.py`（自动调节应用）
+- 每周日 03:00 持续 BC 重训
+
+**未做原因**：闭环需要真实玩家数据，没有玩家就没法验证。
+
+#### 当前 commit
+
+```text
+2aa7d3f feat(stage 4): register hybrid_tactical_v2_promoted_20260816 as non-default candidate
+e92ed52 ...（略）
+```
