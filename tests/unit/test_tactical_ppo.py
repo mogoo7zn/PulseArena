@@ -4,7 +4,7 @@ import unittest
 
 import torch
 
-from training.rl.tactical_ppo import (
+from training.core.tactical_ppo import (
     MaskedTacticalPPOTrainer,
     TacticalActionBatch,
     TacticalActorCritic,
@@ -209,6 +209,38 @@ class TacticalPpoTests(unittest.TestCase):
         self.assertEqual(set(loaded), {"target_slot", "movement_mode", "fire_mode", "skill_mode"})
         with self.assertRaises(ValueError):
             trainer.load_bc_checkpoint({"input_dim": 141, "model_state": state})
+
+    def test_bc_loader_accepts_current_tactical_policy_head_names(self) -> None:
+        model = TacticalActorCritic(input_dim=142, hidden=32, recurrent=False)
+        trainer = MaskedTacticalPPOTrainer(model, TacticalPPOConfig(mixed_precision=False), device=torch.device("cpu"))
+        trunk_weight = torch.full_like(model.encoder[1].weight, 0.07)
+        fire_weight = torch.full_like(model.fire_head.weight, 0.17)
+        skill_weight = torch.full_like(model.skill_head.weight, -0.23)
+        state = {
+            "trunk.0.weight": torch.randn_like(model.encoder[0].weight),
+            "trunk.0.bias": torch.randn_like(model.encoder[0].bias),
+            "trunk.1.weight": trunk_weight,
+            "trunk.1.bias": torch.randn_like(model.encoder[1].bias),
+            "trunk.3.weight": torch.randn_like(model.encoder[3].weight),
+            "trunk.3.bias": torch.randn_like(model.encoder[3].bias),
+            "target_head.weight": torch.randn_like(model.target_head.weight),
+            "target_head.bias": torch.randn_like(model.target_head.bias),
+            "movement_head.weight": torch.randn_like(model.movement_head.weight),
+            "movement_head.bias": torch.randn_like(model.movement_head.bias),
+            "fire_head.weight": fire_weight,
+            "fire_head.bias": torch.randn_like(model.fire_head.bias),
+            "skill_head.weight": skill_weight,
+            "skill_head.bias": torch.randn_like(model.skill_head.bias),
+        }
+
+        loaded = trainer.load_bc_checkpoint({"input_dim": 142, "model_state": state})
+
+        self.assertEqual(loaded["fire_mode"], "loaded")
+        self.assertEqual(loaded["skill_mode"], "loaded")
+        self.assertEqual(loaded["encoder"], "loaded")
+        self.assertTrue(torch.equal(model.encoder[1].weight, trunk_weight))
+        self.assertTrue(torch.equal(model.fire_head.weight, fire_weight))
+        self.assertTrue(torch.equal(model.skill_head.weight, skill_weight))
 
 
 if __name__ == "__main__":

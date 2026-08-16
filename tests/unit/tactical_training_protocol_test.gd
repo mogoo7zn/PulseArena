@@ -1,9 +1,9 @@
 extends RefCounted
 
 const EnvironmentBridgeScript = preload("res://scripts/rl/environment_bridge.gd")
-const HybridAgentConfig = preload("res://scripts/agents/hybrid/hybrid_agent_config.gd")
-const HighLevelDecision = preload("res://scripts/agents/hybrid/tactical_decision.gd")
-const TacticalFeatureBuilder = preload("res://scripts/agents/hybrid/tactical_feature_builder.gd")
+const HybridAgentConfig = preload("res://scripts/agents/hybrid_agent_config.gd")
+const HighLevelDecision = preload("res://scripts/agents/tactical_decision.gd")
+const TacticalFeatureBuilder = preload("res://scripts/agents/tactical_feature_builder.gd")
 
 class FakeController:
 	extends RefCounted
@@ -91,6 +91,7 @@ func run() -> int:
 	failures += _test_tactical_submission_requires_exact_player_set_atomically()
 	failures += _test_non_hybrid_players_are_not_advertised_as_tactical()
 	failures += _test_nested_private_diagnostics_are_removed()
+	failures += _test_reward_profile_round_trip()
 	return failures
 
 func _test_runtime_tactical_feature_schema() -> int:
@@ -215,6 +216,10 @@ func _test_nested_private_diagnostics_are_removed() -> int:
 	var bridge := EnvironmentBridgeScript.new()
 	var arena := FakeArena.new([true])
 	arena.diagnostics_by_id[0] = {
+		"line_of_sight": false,
+		"movement_reason": "engagement_vantage",
+		"reserve_basis": "dash_ready",
+		"reserve_ratio": 0.26,
 		"fallback_counts": {
 			"timeout": 2,
 			"reserved_energy": 99.0,
@@ -245,6 +250,12 @@ func _test_nested_private_diagnostics_are_removed() -> int:
 	if int(fallback_counts.get("timeout", 0)) != 2:
 		push_error("TACTICAL TEST: safe fallback count was removed with private data")
 		failures += 1
+	if bool(diagnostics.get("line_of_sight", true)) or str(diagnostics.get("movement_reason", "")) != "engagement_vantage":
+		push_error("TACTICAL TEST: safe tactical diagnostics must preserve line-of-sight and movement reason")
+		failures += 1
+	if str(diagnostics.get("reserve_basis", "")) != "dash_ready" or not is_equal_approx(float(diagnostics.get("reserve_ratio", 0.0)), 0.26):
+		push_error("TACTICAL TEST: safe tactical diagnostics must preserve reserve cause and ratio")
+		failures += 1
 	if diagnostics.has("model_id"):
 		push_error("TACTICAL TEST: non-string container was coerced into a safe primitive field")
 		failures += 1
@@ -252,6 +263,16 @@ func _test_nested_private_diagnostics_are_removed() -> int:
 	arena.free()
 	bridge.free()
 	return failures
+
+func _test_reward_profile_round_trip() -> int:
+	var config := MatchConfig.new()
+	config.reward_profile_id = "legal_window_pressure"
+	var restored := MatchConfig.from_dict(config.to_dict())
+	if restored.reward_profile_id != "legal_window_pressure":
+		push_error("TACTICAL TEST: MatchConfig must preserve reward_profile_id through serialization")
+		return 1
+	return 0
+
 
 func _decision(decision_id: int) -> Dictionary:
 	return {
@@ -268,6 +289,8 @@ func _contains_private_diagnostic_key(value: Variant) -> bool:
 	if value is Dictionary:
 		for key in value.keys():
 			var normalized := str(key).to_lower().replace("-", "_")
+			if normalized in ["reserve_basis", "reserve_ratio"]:
+				continue
 			for token in ["ammo", "reserve", "energy", "magazine", "reload", "cooldown"]:
 				if normalized.find(token) >= 0:
 					return true

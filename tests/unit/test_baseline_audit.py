@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PATH = ROOT / "training/baseline_audit.py"
+PATH = ROOT / "training/evaluation/baseline_audit.py"
 
 
 def load_module():
@@ -26,7 +26,7 @@ class BaselineAuditTests(unittest.TestCase):
     def test_makefile_exposes_baseline_audit_target(self):
         makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
         self.assertIn("train-baseline-audit:", makefile)
-        self.assertIn("$(PYTHON) training/baseline_audit.py", makefile)
+        self.assertIn("$(PYTHON) training.evaluation.baseline_audit", makefile)
 
     def test_live_project_contract_passes(self):
         report = load_module().build_report(ROOT)
@@ -38,14 +38,14 @@ class BaselineAuditTests(unittest.TestCase):
         module = load_module()
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
-            for relative in ("training/models", "training/configs/training_plans", "training/rl", "scripts/agents/hybrid"):
+            for relative in ("training/models", "training/configs/training_plans", "training/core", "scripts/agents/hybrid"):
                 (root / relative).mkdir(parents=True, exist_ok=True)
             (root / "training/models/model_catalog.json").write_text(json.dumps({"default_model_id": "hybrid_tactical_v1", "models": [{"model_id": "hybrid_tactical_v1", "manifest": "training/models/hybrid_tactical_v1_agent.json", "protocol": 2}]}), encoding="utf-8")
             (root / "training/models/hybrid_tactical_v1_agent.json").write_text(json.dumps({"model_id": "hybrid_tactical_v1", "kind": "hybrid_tactical_prior", "input_dim": 141, "protocol": 2}), encoding="utf-8")
             (root / "training/configs/training_plans/hybrid_tactical_local.json").write_text(json.dumps({"tactical_behavior_clone": {"enabled": True}}), encoding="utf-8")
-            (root / "training/rl/encoding.py").write_text("HYBRID_PROTOCOL_VERSION = 2\\nTACTICAL_FEATURE_SCHEMA_VERSION = 2\\nTACTICAL_FEATURE_DIM = 142\\n", encoding="utf-8")
-            (root / "scripts/agents/hybrid/tactical_decision.gd").write_text("const PROTOCOL_VERSION: int = 2\\n", encoding="utf-8")
-            (root / "scripts/agents/hybrid/tactical_feature_builder.gd").write_text("const FEATURE_DIM: int = 142\\n", encoding="utf-8")
+            (root / "training/core/encoding.py").write_text("HYBRID_PROTOCOL_VERSION = 2\\nTACTICAL_FEATURE_SCHEMA_VERSION = 2\\nTACTICAL_FEATURE_DIM = 142\\n", encoding="utf-8")
+            (root / "scripts/agents/tactical_decision.gd").write_text("const PROTOCOL_VERSION: int = 2\\n", encoding="utf-8")
+            (root / "scripts/agents/tactical_feature_builder.gd").write_text("const FEATURE_DIM: int = 142\\n", encoding="utf-8")
             report = module.build_report(root)
         self.assertEqual(report["result"], "fail")
         self.assertIn("manifest input_dim 141 does not equal Python feature dimension 142", report["failures"])

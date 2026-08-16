@@ -7,6 +7,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
+# Directories that should not be scanned for Godot resources, mirrors .gitignore.
+SCAN_EXCLUDE = (ROOT / ".worktrees", ROOT / ".godot", ROOT / ".tools")
+
+
+def _iter_godot_files(pattern: str):
+    for path in ROOT.rglob(pattern):
+        if any(excluded in path.parents for excluded in SCAN_EXCLUDE):
+            continue
+        yield path
+
 REQUIRED = [
     "project.godot",
     "scenes/app/Main.tscn",
@@ -46,7 +56,7 @@ def main() -> None:
         if not (ROOT / rel).exists():
             fail(f"missing required file: {rel}")
 
-    text = "\n".join(p.read_text(encoding="utf-8", errors="ignore") for p in ROOT.rglob("*.gd"))
+    text = "\n".join(p.read_text(encoding="utf-8", errors="ignore") for p in _iter_godot_files("*.gd"))
     for class_name in [
         "PlayerAction",
         "AgentObservation",
@@ -91,13 +101,13 @@ def main() -> None:
     web_preset = (ROOT / "export_presets.cfg").read_text(encoding="utf-8")
     if not re.search(r"\[preset\.1\.options\]\s+variant/thread_support=false", web_preset):
         fail("Web export preset must define non-threaded options")
-    for rel in ("archive/legacy_raw_ai/.gdignore", "training/runs/.gdignore", "build/.gdignore"):
+    for rel in ("archive/legacy_raw_ai/.gdignore", "training/artifacts/runs/.gdignore", "build/.gdignore"):
         if not (ROOT / rel).is_file():
             fail(f"missing Godot scan exclusion: {rel}")
 
     missing_refs = []
     pattern = re.compile(r'res://([^"\n]+)')
-    for file in list(ROOT.rglob("*.gd")) + list(ROOT.rglob("*.tscn")) + [ROOT / "project.godot"]:
+    for file in list(_iter_godot_files("*.gd")) + list(_iter_godot_files("*.tscn")) + [ROOT / "project.godot"]:
         content = file.read_text(encoding="utf-8", errors="ignore")
         for match in pattern.finditer(content):
             target = ROOT / match.group(1)

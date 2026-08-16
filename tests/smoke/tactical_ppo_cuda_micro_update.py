@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from training.rl.models import TacticalActorCritic
-from training.rl.tactical_ppo import (
+from training.core.models import TacticalActorCritic
+from training.core.tactical_ppo import (
     MaskedTacticalPPOTrainer,
     TacticalPPOConfig,
     sample_masked_tactical_actions,

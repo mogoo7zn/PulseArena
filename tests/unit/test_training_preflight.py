@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PATH = ROOT / "training/server_agent/preflight.py"
+PATH = ROOT / "training/server/preflight.py"
 
 
 def load_module():

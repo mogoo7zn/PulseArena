@@ -7,9 +7,9 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 
-from training.rl.encoding import HybridReplayArrays
-from training.rl.tactical_bc_trainer import split_data
-from training.server_agent.tactical_data_quality import audit_tactical_data, build_episode_split
+from training.core.encoding import HybridReplayArrays
+from training.core.tactical_bc_trainer import split_data
+from training.server.tactical_data_quality import audit_tactical_data, build_episode_split
 
 
 def valid_row(episode_id: str = "episode-1") -> dict[str, object]:

@@ -43,9 +43,9 @@ class WebPreviewPackageTests(unittest.TestCase):
                 manifest = json.loads(manifest_file.read().decode("utf-8"))
 
         for path in (
-            "scripts/linux/export_web.sh",
-            "scripts/linux/web_preview.sh",
-            "scripts/linux/web_preview_server.py",
+            "scripts/ops/export_web.sh",
+            "scripts/ops/web_preview.sh",
+            "scripts/ops/web_preview_server.py",
         ):
             self.assertIn(f"web-preview_test/{path}", names)
         self.assertEqual(

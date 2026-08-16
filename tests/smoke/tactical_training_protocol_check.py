@@ -102,24 +102,33 @@ def read_log_tail(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace")[-4000:]
 
 
-def reset(client: TcpJsonlClient, human_count: int, agent_count: int, seed: int) -> None:
+def reset(
+    client: TcpJsonlClient,
+    human_count: int,
+    agent_count: int,
+    seed: int,
+    extra_config: dict[str, Any] | None = None,
+) -> None:
+    config = {
+        "mode": "ffa",
+        "human_player_count": human_count,
+        "agent_count": agent_count,
+        "team_mode": False,
+        "friendly_fire": True,
+        "time_limit": 5.0,
+        "map_id": "dungeon",
+        "agent_difficulty": "hard",
+        "agent_controller": "hybrid",
+        "agent_model_id": "hybrid_tactical_v1",
+        "random_seed": seed,
+        "headless": True,
+    }
+    if extra_config:
+        config.update(extra_config)
     response = client.request(
         {
             "cmd": "reset",
-            "config": {
-                "mode": "ffa",
-                "human_player_count": human_count,
-                "agent_count": agent_count,
-                "team_mode": False,
-                "friendly_fire": True,
-                "time_limit": 5.0,
-                "map_id": "dungeon",
-                "agent_difficulty": "hard",
-                "agent_controller": "hybrid",
-                "agent_model_id": "hybrid_tactical_v1",
-                "random_seed": seed,
-                "headless": True,
-            },
+            "config": config,
         }
     )
     assert response["type"] == "reset_ok", response
@@ -168,6 +177,11 @@ def assert_tactical_snapshot(
     assert isinstance(snapshot["terminated"], bool), snapshot
     assert isinstance(snapshot["truncated"], bool), snapshot
     assert snapshot["info"]["tactical_player_ids"] == expected_tactical_ids, snapshot
+    if snapshot["terminated"]:
+        result = snapshot["info"].get("match_result")
+        assert isinstance(result, dict), snapshot
+        assert isinstance(result.get("standings"), list), snapshot
+        assert "winner_player_id" in result, snapshot
     for player_id, player in snapshot["players"].items():
         controllable = int(player_id) in expected_tactical_ids
         assert player["supports_tactical_decisions"] is controllable, player
@@ -215,6 +229,7 @@ def run_smoke(godot: str, host: str, port: int, timeout: float) -> dict[str, Any
         observed = client.request({"cmd": "observe_tactical"})
         assert observed["type"] == "observe_tactical", observed
         assert_tactical_snapshot(observed, [0, 1])
+        assert observed["info"]["reward_profile_id"] == "baseline", observed
         decisions = decisions_from_snapshot(observed, 9100)
 
         raw_error = client.request(
@@ -257,6 +272,36 @@ def run_smoke(godot: str, host: str, port: int, timeout: float) -> dict[str, Any
         )
         assert mixed_step["type"] == "step_tactical", mixed_step
         assert_tactical_snapshot(mixed_step, [1])
+
+        reset(
+            client,
+            human_count=0,
+            agent_count=2,
+            seed=74104,
+            extra_config={
+                "agent_controller": "scripted",
+                "agent_controller_overrides": {"0": "hybrid"},
+                "agent_model_id_overrides": {"0": "hybrid_tactical_v1"},
+                "time_limit": 0.05,
+                "reward_profile_id": "score_margin_discipline",
+            },
+        )
+        paired = client.request({"cmd": "observe_tactical"})
+        assert_tactical_snapshot(paired, [0])
+        assert paired["info"]["reward_profile_id"] == "score_margin_discipline", paired
+        paired_decisions = decisions_from_snapshot(paired, 9300)
+        paired_result = client.request(
+            {"cmd": "step_tactical", "decisions": paired_decisions, "ticks": 220}
+        )
+        assert paired_result["type"] == "step_tactical", paired_result
+        assert paired_result["terminated"] is True, paired_result
+        assert_tactical_snapshot(paired_result, [0])
+        paired_match_result = paired_result["info"]["match_result"]
+        paired_standings = paired_match_result["standings"]
+        if len(paired_standings) >= 2 and paired_standings[0]["score"] == paired_standings[1]["score"]:
+            assert paired_match_result["winner_player_id"] == -1, paired_match_result
+            assert "win" not in paired_result["players"]["0"]["reward_components"], paired_result
+
         extra_error = client.request(
             {
                 "cmd": "step_tactical",
@@ -307,6 +352,8 @@ def run_smoke(godot: str, host: str, port: int, timeout: float) -> dict[str, Any
                 for player_id in ("0", "1")
             ],
             "mixed_tactical_player_ids": mixed["info"]["tactical_player_ids"],
+            "paired_tactical_player_ids": paired["info"]["tactical_player_ids"],
+            "paired_winner_player_id": paired_result["info"]["match_result"]["winner_player_id"],
             "raw_rejection": raw_error["message"],
             "partial_rejection": partial_error["message"],
             "legacy_type": legacy["type"],
