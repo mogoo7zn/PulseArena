@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 CURRICULUM_PATH = ROOT / "training" / "configs" / "curriculum.json"
 PROFILES_DIR = ROOT / "training" / "configs" / "profiles"
 LOCAL_SETTINGS_PATH = ROOT / "training" / "local_settings.json"

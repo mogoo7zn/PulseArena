@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CATALOG = ROOT / "training" / "models" / "model_catalog.json"
 DEFAULT_CHECKPOINT_DIR = ROOT / "training" / "checkpoints" / "hybrid"
 DEFAULT_MANIFEST_DIR = ROOT / "training" / "models"

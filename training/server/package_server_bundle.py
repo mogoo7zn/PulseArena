@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Iterable
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUTPUT_DIR = ROOT / "training" / "packages"
 DEFAULT_BUNDLE_ID = "pulsearena_hybrid_tactical_v2_agent_bundle"
 
