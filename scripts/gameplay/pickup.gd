@@ -10,6 +10,7 @@ const TYPE_OVERCHARGE := "overcharge"
 const TYPE_MAGNET := "magnet"
 
 var pickup_type: String = TYPE_HEALTH
+var pickup_id: int = -1
 var lifetime: float = 15.0
 var max_lifetime: float = 15.0
 var collect_radius: float = 42.0
@@ -22,8 +23,9 @@ func set_visuals_enabled(enabled: bool) -> void:
 	visuals_enabled = enabled
 	visible = enabled
 
-func configure(kind: String, position: Vector2, duration: float, radius: float) -> void:
+func configure(kind: String, position: Vector2, duration: float, radius: float, id: int = -1) -> void:
 	pickup_type = kind
+	pickup_id = id
 	global_position = position
 	lifetime = duration
 	max_lifetime = duration

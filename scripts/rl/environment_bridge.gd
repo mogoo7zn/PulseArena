@@ -3,9 +3,9 @@ extends Node
 class_name EnvironmentBridge
 
 const ARENA_SCENE_PATH := "res://scenes/arena/ArenaRoot.tscn"
-const HighLevelDecision = preload("res://scripts/agents/hybrid/tactical_decision.gd")
-const HybridAgentConfig = preload("res://scripts/agents/hybrid/hybrid_agent_config.gd")
-const TacticalFeatureBuilder = preload("res://scripts/agents/hybrid/tactical_feature_builder.gd")
+const HighLevelDecision = preload("res://scripts/agents/tactical_decision.gd")
+const HybridAgentConfig = preload("res://scripts/agents/hybrid_agent_config.gd")
+const TacticalFeatureBuilder = preload("res://scripts/agents/tactical_feature_builder.gd")
 const TACTICAL_PROTOCOL := HighLevelDecision.PROTOCOL_VERSION
 const TACTICAL_DECISION_FIELDS := {
 	"protocol": true,
@@ -24,12 +24,14 @@ const TACTICAL_DECISION_FIELDS := {
 }
 const SAFE_DIAGNOSTIC_INT_FIELDS := [
 	"protocol_version",
+	"decision_generation_id",
 ]
 const SAFE_DIAGNOSTIC_FLOAT_FIELDS := [
 	"confidence",
 	"target_health_ratio",
 	"aim_error",
 	"predicted_hit_probability",
+	"reserve_ratio",
 	"stuck_score",
 	"primary_projectile_threat",
 	"nearest_wall_distance_ratio",
@@ -37,7 +39,9 @@ const SAFE_DIAGNOSTIC_FLOAT_FIELDS := [
 ]
 const SAFE_DIAGNOSTIC_BOOL_FIELDS := [
 	"target_valid",
+	"line_of_sight",
 	"fire_allowed",
+	"actionable_window",
 	"stuck_recovery_active",
 	"safety_override",
 	"script_fallback",
@@ -45,9 +49,11 @@ const SAFE_DIAGNOSTIC_BOOL_FIELDS := [
 const SAFE_DIAGNOSTIC_STRING_FIELDS := [
 	"target",
 	"movement_mode",
+	"movement_reason",
 	"fire_mode",
 	"skill_mode",
 	"fire_block_reason",
+	"reserve_basis",
 	"override_reason",
 	"skill_reason",
 	"model_id",
@@ -194,6 +200,12 @@ func get_tactical_snapshot() -> Dictionary:
 		}
 		if arena.has_method("get_reward_components"):
 			player_data["reward_components"] = arena.get_reward_components(player_id)
+		if arena.has_method("get_tactical_event_counts"):
+			player_data["tactical_event_counts"] = arena.get_tactical_event_counts(player_id)
+		if arena.has_method("get_resource_event_counts"):
+			player_data["resource_event_counts"] = arena.get_resource_event_counts(player_id)
+		if arena.has_method("get_map_event_counts"):
+			player_data["map_event_counts"] = arena.get_map_event_counts(player_id)
 		if not supports_tactical:
 			players_out[player_id] = player_data
 			tactical_reward_baseline[player_id] = total_reward
@@ -211,12 +223,15 @@ func get_tactical_snapshot() -> Dictionary:
 		tactical_reward_baseline[player_id] = total_reward
 	snapshot["players"] = players_out
 	snapshot["rewards"] = rewards
-	snapshot["info"] = {
+	var info := {
 		"players": arena.players.size(),
 		"supports_tactical_decisions": not tactical_player_ids.is_empty(),
 		"tactical_player_ids": tactical_player_ids,
 		"feature_schema_version": TacticalFeatureBuilder.FEATURE_SCHEMA_VERSION,
+		"reward_profile_id": _reward_profile_id(),
 	}
+	_add_match_result_info(info)
+	snapshot["info"] = info
 	return snapshot
 
 func get_last_tactical_error() -> String:
@@ -237,20 +252,38 @@ func get_truncated() -> bool:
 	return false
 
 func get_info() -> Dictionary:
-	return {
+	var info := {
 		"players": arena.players.size() if arena != null else 0,
 		"last_actions": last_actions,
 		"supports_external_actions": true,
 		"supports_multi_arena": false,
 	}
+	_add_match_result_info(info)
+	return info
+
+func _add_match_result_info(info: Dictionary) -> void:
+	if arena == null or not get_terminated() or not arena.has_method("get_match_result"):
+		return
+	var result: Variant = arena.get_match_result()
+	if typeof(result) == TYPE_DICTIONARY and not (result as Dictionary).is_empty():
+		info["match_result"] = (result as Dictionary).duplicate(true)
+
+func _reward_profile_id() -> String:
+	if arena == null:
+		return "baseline"
+	var match_config: Variant = arena.get("config")
+	if match_config is MatchConfig:
+		return (match_config as MatchConfig).reward_profile_id
+	return "baseline"
 
 func _build_tactical_data(player) -> Dictionary:
 	var observation: AgentObservation = arena.build_observation(player)
 	var current_decision: Variant = _executed_decision_for(player)
 	var builder: Variant = player.controller.get("feature_builder") if player.controller != null else null
-	var runtime_config: Variant = player.controller.get("config") if player.controller != null else null
-	if builder != null and builder.has_method("build") and runtime_config != null:
-		return builder.build(observation, arena.balance, runtime_config, current_decision)
+	if builder != null and builder.has_method("build"):
+		var tactical_config := HybridAgentConfig.for_profile(_reward_profile_id())
+		var arena_map: Variant = arena.get("arena_map")
+		return builder.build(observation, arena.balance, tactical_config, current_decision, arena_map as Node)
 	return {}
 
 func _executed_decision_for(player):

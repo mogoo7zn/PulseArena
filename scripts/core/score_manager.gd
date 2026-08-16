@@ -57,10 +57,34 @@ func get_sorted_standings() -> Array[Dictionary]:
 
 func build_result(config: MatchConfig) -> Dictionary:
 	var standings := get_sorted_standings()
+	var team_scores := get_team_scores()
+	var winner_player_id := -1
+	var winner_team_id := -1
+	if config.team_mode:
+		var ranked_teams := team_scores.keys()
+		ranked_teams.sort_custom(func(a: Variant, b: Variant) -> bool:
+			return int(team_scores[a]) > int(team_scores[b])
+		)
+		if not ranked_teams.is_empty():
+			var top_team := int(ranked_teams[0])
+			var top_score := int(team_scores[top_team])
+			var unique_lead := ranked_teams.size() == 1 or top_score > int(team_scores[ranked_teams[1]])
+			if unique_lead:
+				winner_team_id = top_team
+				for standing in standings:
+					if int(standing["team_id"]) == winner_team_id:
+						winner_player_id = int(standing["player_id"])
+						break
+	elif not standings.is_empty():
+		var top_score := int(standings[0]["score"])
+		var unique_lead := standings.size() == 1 or top_score > int(standings[1]["score"])
+		if unique_lead:
+			winner_player_id = int(standings[0]["player_id"])
 	return {
 		"mode": config.mode,
 		"team_mode": config.team_mode,
 		"standings": standings,
-		"team_scores": get_team_scores(),
-		"winner_player_id": int(standings[0]["player_id"]) if not standings.is_empty() else -1,
+		"team_scores": team_scores,
+		"winner_player_id": winner_player_id,
+		"winner_team_id": winner_team_id,
 	}

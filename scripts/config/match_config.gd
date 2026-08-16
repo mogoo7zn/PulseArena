@@ -26,14 +26,21 @@ const AGENT_CONTROLLER_HYBRID := "hybrid"
 @export var map_id: String = MAP_DUNGEON
 @export var agent_difficulty: String = "normal"
 @export var agent_controller: String = AGENT_CONTROLLER_SCRIPTED
+@export var agent_controller_overrides: Dictionary = {}
 @export var agent_model_id: String = ""
+@export var agent_model_id_overrides: Dictionary = {}
 @export var agent_model_host: String = "127.0.0.1"
 @export var agent_model_port: int = 8766
 @export var agent_model_timeout_ms: int = 16
 @export var random_seed: int = 1234
 @export var headless: bool = false
 @export var record_replay: bool = false
+@export var replay_output_dir: String = ""
 @export var training_fast_mode: bool = false
+@export var reward_profile_id: String = "baseline"
+# Training-only spawn curriculum.  "safe" preserves the deployed respawn
+# behavior; "engagement_window" is opt-in for headless tactical collection.
+@export var training_spawn_policy: String = "safe"
 
 func duplicate_config() -> MatchConfig:
 	var copy := MatchConfig.new()
@@ -47,14 +54,19 @@ func duplicate_config() -> MatchConfig:
 	copy.map_id = map_id
 	copy.agent_difficulty = agent_difficulty
 	copy.agent_controller = agent_controller
+	copy.agent_controller_overrides = agent_controller_overrides.duplicate(true)
 	copy.agent_model_id = agent_model_id
+	copy.agent_model_id_overrides = agent_model_id_overrides.duplicate(true)
 	copy.agent_model_host = agent_model_host
 	copy.agent_model_port = agent_model_port
 	copy.agent_model_timeout_ms = agent_model_timeout_ms
 	copy.random_seed = random_seed
 	copy.headless = headless
 	copy.record_replay = record_replay
+	copy.replay_output_dir = replay_output_dir
 	copy.training_fast_mode = training_fast_mode
+	copy.reward_profile_id = reward_profile_id
+	copy.training_spawn_policy = training_spawn_policy
 	return copy
 
 func total_players() -> int:
@@ -72,14 +84,19 @@ func to_dict() -> Dictionary:
 		"map_id": map_id,
 		"agent_difficulty": agent_difficulty,
 		"agent_controller": agent_controller,
+		"agent_controller_overrides": agent_controller_overrides.duplicate(true),
 		"agent_model_id": agent_model_id,
+		"agent_model_id_overrides": agent_model_id_overrides.duplicate(true),
 		"agent_model_host": agent_model_host,
 		"agent_model_port": agent_model_port,
 		"agent_model_timeout_ms": agent_model_timeout_ms,
 		"random_seed": random_seed,
 		"headless": headless,
 		"record_replay": record_replay,
+		"replay_output_dir": replay_output_dir,
 		"training_fast_mode": training_fast_mode,
+		"reward_profile_id": reward_profile_id,
+		"training_spawn_policy": training_spawn_policy,
 	}
 
 static func from_dict(data: Dictionary) -> MatchConfig:
@@ -94,15 +111,23 @@ static func from_dict(data: Dictionary) -> MatchConfig:
 	config.map_id = str(data.get("map_id", MAP_ARENA_CROSS))
 	config.agent_difficulty = str(data.get("agent_difficulty", "normal"))
 	config.agent_controller = str(data.get("agent_controller", AGENT_CONTROLLER_SCRIPTED))
+	config.agent_controller_overrides = _dict_from_variant(data.get("agent_controller_overrides", {}))
 	config.agent_model_id = str(data.get("agent_model_id", ""))
+	config.agent_model_id_overrides = _dict_from_variant(data.get("agent_model_id_overrides", {}))
 	config.agent_model_host = str(data.get("agent_model_host", "127.0.0.1"))
 	config.agent_model_port = int(data.get("agent_model_port", 8766))
 	config.agent_model_timeout_ms = int(data.get("agent_model_timeout_ms", 16))
 	config.random_seed = int(data.get("random_seed", 1234))
 	config.headless = bool(data.get("headless", false))
 	config.record_replay = bool(data.get("record_replay", false))
+	config.replay_output_dir = str(data.get("replay_output_dir", ""))
 	config.training_fast_mode = bool(data.get("training_fast_mode", false))
+	config.reward_profile_id = str(data.get("reward_profile_id", "baseline"))
+	config.training_spawn_policy = str(data.get("training_spawn_policy", "safe"))
 	return config
+
+static func _dict_from_variant(value: Variant) -> Dictionary:
+	return (value as Dictionary).duplicate(true) if typeof(value) == TYPE_DICTIONARY else {}
 
 static func preset_human_vs_agent(agent_count_value: int) -> MatchConfig:
 	var config := MatchConfig.new()

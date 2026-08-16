@@ -26,6 +26,9 @@ var agent_model_id: String = ""
 var stage_id: String = "ad_hoc"
 var profile_id: String = "default"
 var record_replay: bool = false
+var replay_output_dir: String = ""
+var reward_profile_id: String = "baseline"
+var training_spawn_policy: String = "safe"
 var visual_mode: bool = false
 var summaries: Array[Dictionary] = []
 
@@ -47,6 +50,9 @@ func _ready() -> void:
 	stage_id = _get_string_arg(args, "--stage", "ad_hoc")
 	profile_id = _get_string_arg(args, "--profile", "default")
 	record_replay = _get_bool_arg(args, "--record-replay", false)
+	replay_output_dir = _get_string_arg(args, "--replay-dir", "")
+	reward_profile_id = _get_string_arg(args, "--reward-profile", "baseline")
+	training_spawn_policy = _get_string_arg(args, "--training-spawn-policy", "safe")
 	visual_mode = _get_bool_arg(args, "--visual", false)
 	_start_next_match()
 
@@ -98,7 +104,10 @@ func _make_match_config(match_index: int) -> MatchConfig:
 	config.random_seed = base_seed + match_index
 	config.headless = not visual_mode
 	config.record_replay = record_replay
+	config.replay_output_dir = replay_output_dir
 	config.training_fast_mode = not record_replay
+	config.reward_profile_id = reward_profile_id
+	config.training_spawn_policy = training_spawn_policy
 	return config
 
 func _map_for_match(match_index: int) -> String:

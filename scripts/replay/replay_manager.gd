@@ -2,25 +2,27 @@ extends RefCounted
 # 回放管理器，记录、序列化和恢复比赛输入帧。
 class_name ReplayManager
 
-const HighLevelDecision = preload("res://scripts/agents/hybrid/tactical_decision.gd")
-const HybridAgentConfig = preload("res://scripts/agents/hybrid/hybrid_agent_config.gd")
-const TacticalFeatureBuilder = preload("res://scripts/agents/hybrid/tactical_feature_builder.gd")
-const TacticalTeacher = preload("res://scripts/agents/hybrid/tactical_teacher.gd")
+const HighLevelDecision = preload("res://scripts/agents/tactical_decision.gd")
+const HybridAgentConfig = preload("res://scripts/agents/hybrid_agent_config.gd")
+const TacticalFeatureBuilder = preload("res://scripts/agents/tactical_feature_builder.gd")
+const TacticalTeacher = preload("res://scripts/agents/tactical_teacher.gd")
 
 var enabled: bool = false
 var match_id: String = ""
 var random_seed: int = 0
 var file: FileAccess
 var replay_schema: String = "raw_replay_v1"
+var tactical_config := HybridAgentConfig.new()
 
 func start(config: MatchConfig) -> void:
 	enabled = config.record_replay
 	random_seed = config.random_seed
 	replay_schema = HybridAgentConfig.REPLAY_SCHEMA if config.agent_controller == MatchConfig.AGENT_CONTROLLER_HYBRID else "raw_replay_v1"
+	tactical_config = HybridAgentConfig.for_profile(config.reward_profile_id)
 	match_id = "%s_%d" % [Time.get_datetime_string_from_system().replace(":", "-"), random_seed]
 	if not enabled:
 		return
-	var replay_dir := ProjectSettings.globalize_path("res://training/replays") if config.headless else ProjectSettings.globalize_path("user://replays")
+	var replay_dir := _resolve_replay_dir(config)
 	DirAccess.make_dir_recursive_absolute(replay_dir)
 	var suffix := ".hybrid_v2.jsonl" if replay_schema == HybridAgentConfig.REPLAY_SCHEMA else ".jsonl"
 	var path := replay_dir.path_join("%s%s" % [match_id, suffix])
@@ -29,7 +31,14 @@ func start(config: MatchConfig) -> void:
 		enabled = false
 		AppLog.warn("Replay file could not be opened", {"path": path})
 
-func record_decision(timestamp: float, player: ArenaPlayer, observation: AgentObservation, action: PlayerAction, score: int) -> void:
+func _resolve_replay_dir(config: MatchConfig) -> String:
+	if config.replay_output_dir.is_empty():
+		return ProjectSettings.globalize_path("res://training/data/replays") if config.headless else ProjectSettings.globalize_path("user://replays")
+	if config.replay_output_dir.begins_with("res://") or config.replay_output_dir.begins_with("user://"):
+		return ProjectSettings.globalize_path(config.replay_output_dir)
+	return ProjectSettings.globalize_path("res://").path_join(config.replay_output_dir)
+
+func record_decision(timestamp: float, player: ArenaPlayer, observation: AgentObservation, action: PlayerAction, score: int, arena_map: Node = null) -> void:
 	if not enabled or file == null:
 		return
 	var row: Dictionary = {
@@ -48,7 +57,8 @@ func record_decision(timestamp: float, player: ArenaPlayer, observation: AgentOb
 	}
 	if replay_schema == HybridAgentConfig.REPLAY_SCHEMA:
 		var builder := TacticalFeatureBuilder.new()
-		var tactical := builder.build(observation, player.balance, HybridAgentConfig.new())
+		var tactical := builder.build(observation, player.balance, tactical_config, null, arena_map)
+		tactical["engagement_profile_id"] = tactical_config.engagement_profile_id
 		var diagnostics = player.controller.get_diagnostics() if player.controller != null and player.controller.has_method("get_diagnostics") else {}
 		var executed_decision: Dictionary = diagnostics.get("decision", {})
 		var teacher_label := TacticalTeacher.new().build_label(observation, tactical, player.balance, diagnostics)

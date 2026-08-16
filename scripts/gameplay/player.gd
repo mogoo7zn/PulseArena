@@ -3,6 +3,7 @@ extends CharacterBody2D
 class_name ArenaPlayer
 
 signal projectile_requested(player: ArenaPlayer, origin: Vector2, direction: Vector2)
+signal pickup_effect_expired(player: ArenaPlayer, pickup_type: String, source_id: int, realized: bool)
 
 const HURT_EXPRESSION_DURATION := 2.0
 
@@ -61,6 +62,12 @@ var pickup_projectile_speed_multiplier: float = 1.0
 var pickup_magnet_timer: float = 0.0
 var pickup_flash_timer: float = 0.0
 var pickup_flash_color: Color = Color("#63D7C4")
+var pickup_shield_source_id: int = -1
+var pickup_haste_source_id: int = -1
+var pickup_overcharge_source_id: int = -1
+var pickup_shield_realized: bool = false
+var pickup_haste_realized: bool = false
+var pickup_overcharge_realized: bool = false
 var camouflage_intensity: float = 0.0
 var mist_visibility: float = 1.0
 var visuals_enabled: bool = true
@@ -124,6 +131,12 @@ func spawn_at(spawn_position: Vector2, respawn: bool = false) -> void:
 	pickup_projectile_speed_multiplier = 1.0
 	pickup_magnet_timer = 0.0
 	pickup_flash_timer = 0.0
+	pickup_shield_source_id = -1
+	pickup_haste_source_id = -1
+	pickup_overcharge_source_id = -1
+	pickup_shield_realized = false
+	pickup_haste_realized = false
+	pickup_overcharge_realized = false
 	camouflage_intensity = 0.0
 	mist_visibility = 1.0
 	modulate = Color(modulate.r, modulate.g, modulate.b, 1.0)
@@ -155,6 +168,9 @@ func status_step(delta: float) -> void:
 	shoot_cooldown_timer = maxf(0.0, shoot_cooldown_timer - delta)
 	dash_cooldown_timer = maxf(0.0, dash_cooldown_timer - delta)
 	shield_cooldown_timer = maxf(0.0, shield_cooldown_timer - delta)
+	var prior_pickup_shield_timer := shield_timer
+	var prior_pickup_haste_timer := pickup_fire_rate_timer
+	var prior_pickup_overcharge_timer := pickup_overcharge_timer
 	shield_timer = maxf(0.0, shield_timer - delta)
 	dash_invincible_timer = maxf(0.0, dash_invincible_timer - delta)
 	protection_timer = maxf(0.0, protection_timer - delta)
@@ -167,6 +183,18 @@ func status_step(delta: float) -> void:
 	pickup_overcharge_timer = maxf(0.0, pickup_overcharge_timer - delta)
 	pickup_magnet_timer = maxf(0.0, pickup_magnet_timer - delta)
 	pickup_flash_timer = maxf(0.0, pickup_flash_timer - delta)
+	if prior_pickup_shield_timer > 0.0 and shield_timer <= 0.0 and pickup_shield_source_id >= 0:
+		pickup_effect_expired.emit(self, "shield", pickup_shield_source_id, pickup_shield_realized)
+		pickup_shield_source_id = -1
+		pickup_shield_realized = false
+	if prior_pickup_haste_timer > 0.0 and pickup_fire_rate_timer <= 0.0 and pickup_haste_source_id >= 0:
+		pickup_effect_expired.emit(self, "haste", pickup_haste_source_id, pickup_haste_realized)
+		pickup_haste_source_id = -1
+		pickup_haste_realized = false
+	if prior_pickup_overcharge_timer > 0.0 and pickup_overcharge_timer <= 0.0 and pickup_overcharge_source_id >= 0:
+		pickup_effect_expired.emit(self, "overcharge", pickup_overcharge_source_id, pickup_overcharge_realized)
+		pickup_overcharge_source_id = -1
+		pickup_overcharge_realized = false
 	map_speed_multiplier = 1.0
 	if not is_alive:
 		respawn_timer = maxf(0.0, respawn_timer - delta)
@@ -237,7 +265,7 @@ func take_damage(amount: float, attacker_id: int) -> Dictionary:
 		"health": health,
 	})
 	_request_visual_redraw()
-	return {"dealt": dealt, "absorbed": absorbed, "killed": killed}
+	return {"dealt": dealt, "absorbed": absorbed, "killed": killed, "pickup_shield_source_id": pickup_shield_source_id if absorbed > 0.0 else -1}
 
 func kill_by_environment() -> Dictionary:
 	if not is_alive:
@@ -325,31 +353,37 @@ func restore_health(amount: float) -> float:
 		_request_visual_redraw()
 	return restored
 
-func apply_pickup_shield(duration: float, absorb: float) -> void:
+func apply_pickup_shield(duration: float, absorb: float, source_id: int = -1) -> void:
 	if not is_alive:
 		return
 	shield_timer = maxf(shield_timer, duration)
 	shield_absorb_remaining = maxf(shield_absorb_remaining, absorb)
+	pickup_shield_source_id = source_id
+	pickup_shield_realized = false
 	_trigger_pickup_flash(Color("#6EA8FE"))
 	GameEvents.emit_shield_activated({"player_id": player_id, "duration": shield_timer, "absorb": shield_absorb_remaining})
 	_request_visual_redraw()
 
-func apply_haste(duration: float, speed_multiplier: float, fire_rate_multiplier: float) -> void:
+func apply_haste(duration: float, speed_multiplier: float, fire_rate_multiplier: float, source_id: int = -1) -> void:
 	if not is_alive:
 		return
 	pickup_speed_timer = maxf(pickup_speed_timer, duration)
 	pickup_speed_multiplier = maxf(pickup_speed_multiplier, maxf(1.0, speed_multiplier))
 	pickup_fire_rate_timer = maxf(pickup_fire_rate_timer, duration)
 	pickup_fire_rate_multiplier = maxf(pickup_fire_rate_multiplier, maxf(1.0, fire_rate_multiplier))
+	pickup_haste_source_id = source_id
+	pickup_haste_realized = false
 	_trigger_pickup_flash(Color("#E6A85C"))
 	_request_visual_redraw()
 
-func apply_overcharge(duration: float, damage_multiplier: float, projectile_speed_multiplier: float) -> void:
+func apply_overcharge(duration: float, damage_multiplier: float, projectile_speed_multiplier: float, source_id: int = -1) -> void:
 	if not is_alive:
 		return
 	pickup_overcharge_timer = maxf(pickup_overcharge_timer, duration)
 	pickup_damage_multiplier = maxf(pickup_damage_multiplier, maxf(1.0, damage_multiplier))
 	pickup_projectile_speed_multiplier = maxf(pickup_projectile_speed_multiplier, maxf(1.0, projectile_speed_multiplier))
+	pickup_overcharge_source_id = source_id
+	pickup_overcharge_realized = false
 	_trigger_pickup_flash(Color("#FF6B6B"))
 	_request_visual_redraw()
 
@@ -359,6 +393,21 @@ func apply_magnet(duration: float) -> void:
 	pickup_magnet_timer = maxf(pickup_magnet_timer, duration)
 	_trigger_pickup_flash(Color("#63D7C4"))
 	_request_visual_redraw()
+
+func get_pickup_haste_source_id() -> int:
+	return pickup_haste_source_id if pickup_fire_rate_timer > 0.0 else -1
+
+func get_pickup_overcharge_source_id() -> int:
+	return pickup_overcharge_source_id if pickup_overcharge_timer > 0.0 else -1
+
+func mark_pickup_shield_realized() -> void:
+	pickup_shield_realized = true
+
+func mark_pickup_haste_realized() -> void:
+	pickup_haste_realized = true
+
+func mark_pickup_overcharge_realized() -> void:
+	pickup_overcharge_realized = true
 
 func apply_pulse_flash() -> void:
 	if not is_alive:

@@ -2,10 +2,11 @@ extends PlayerController
 # Hybrid Tactical Agent: learned high-level decisions plus deterministic combat executor.
 class_name HybridAgentController
 
-const HighLevelDecision = preload("res://scripts/agents/hybrid/tactical_decision.gd")
-const HybridAgentConfig = preload("res://scripts/agents/hybrid/hybrid_agent_config.gd")
-const TacticalFeatureBuilder = preload("res://scripts/agents/hybrid/tactical_feature_builder.gd")
-const HybridCombatExecutor = preload("res://scripts/agents/hybrid/hybrid_combat_executor.gd")
+const HighLevelDecision = preload("res://scripts/agents/tactical_decision.gd")
+const HybridAgentConfig = preload("res://scripts/agents/hybrid_agent_config.gd")
+const TacticalFeatureBuilder = preload("res://scripts/agents/tactical_feature_builder.gd")
+const TacticalTeacher = preload("res://scripts/agents/tactical_teacher.gd")
+const HybridCombatExecutor = preload("res://scripts/agents/hybrid_combat_executor.gd")
 
 const DEFAULT_HOST := "127.0.0.1"
 const DEFAULT_PORT := 8766
@@ -37,8 +38,6 @@ var last_warning_ms: int = -100000
 var low_confidence_timer: float = 0.0
 var fallback_timer: float = 0.0
 var no_target_fire_timer: float = 0.0
-var repeated_decision_timer: float = 0.0
-var previous_decision_key: String = ""
 var fallback_counts: Dictionary = {}
 var last_diagnostics: Dictionary = {}
 var inference_latency_ms: float = 0.0
@@ -67,8 +66,6 @@ func reset() -> void:
 	low_confidence_timer = 0.0
 	fallback_timer = 0.0
 	no_target_fire_timer = 0.0
-	repeated_decision_timer = 0.0
-	previous_decision_key = ""
 	fallback_counts.clear()
 	last_diagnostics.clear()
 	inference_latency_ms = 0.0
@@ -88,7 +85,8 @@ func get_action(observation: AgentObservation, delta: float) -> PlayerAction:
 	decision_timer = _decision_interval()
 	var scripted_action := scripted.get_action(observation, delta) if scripted != null else PlayerAction.new()
 	var scripted_target := _scripted_target(observation)
-	var tactical_data := feature_builder.build(observation, _balance(), config, current_decision)
+	var tactical_data := feature_builder.build(observation, _balance(), config, current_decision, _arena_map_for_features())
+	tactical_data["engagement_profile_id"] = config.engagement_profile_id
 	var masks: Dictionary = tactical_data.get("action_masks", {})
 	var decision := _select_decision(observation, tactical_data, scripted_action, masks, delta)
 	var legal_after_mask := decision.apply_masks(masks)
@@ -135,6 +133,11 @@ func _select_decision(observation: AgentObservation, tactical_data: Dictionary, 
 	return _local_prior_decision(observation, tactical_data, scripted_action, masks)
 
 func _local_prior_decision(obs: AgentObservation, tactical_data: Dictionary, _scripted_action: PlayerAction, masks: Dictionary) -> HighLevelDecision:
+	if config.teacher_fallback_enabled:
+		var taught: Dictionary = TacticalTeacher.new().build_label(obs, tactical_data, _balance(), {}, config)
+		var teacher_decision: HighLevelDecision = HighLevelDecision.from_dict(taught.get("decision", {}))
+		teacher_decision.apply_masks(masks)
+		return teacher_decision
 	var decision = HighLevelDecision.scripted_teacher(request_id)
 	var threat_info: Dictionary = tactical_data.get("threat_info", {})
 	var high_threat := float(threat_info.get("threat_level", 0.0)) >= config.high_threat_threshold
@@ -461,16 +464,6 @@ func _update_fallback_guards(_obs: AgentObservation, decision: HighLevelDecision
 	if low_confidence_timer >= config.low_confidence_window:
 		fallback_timer = config.fallback_recover_window
 		_count_fallback("low_confidence")
-	var key := "%d:%d:%d:%d" % [decision.target_slot, decision.movement_mode, decision.fire_mode, decision.skill_mode]
-	if key == previous_decision_key:
-		repeated_decision_timer += delta
-	else:
-		repeated_decision_timer = 0.0
-		previous_decision_key = key
-	if repeated_decision_timer >= config.collapse_window and decision.fire_mode != HighLevelDecision.FireMode.HOLD_FIRE:
-		fallback_timer = config.fallback_recover_window
-		_count_fallback("decision_collapse")
-		repeated_decision_timer = 0.0
 
 func _update_no_target_fire_guard(obs: AgentObservation, action: PlayerAction, decision: HighLevelDecision, delta: float) -> void:
 	if obs == null:
@@ -509,6 +502,15 @@ func _balance() -> GameBalance:
 	if ConfigDB != null:
 		return ConfigDB.get_balance()
 	return GameBalance.default()
+
+func _arena_map_for_features() -> Node:
+	var node: Node = controlled_player
+	while node != null:
+		var value: Variant = node.get("arena_map")
+		if value is Node:
+			return value
+		node = node.get_parent()
+	return null
 
 func _warn_throttled(message: String, context: Dictionary = {}) -> void:
 	var now := Time.get_ticks_msec()
