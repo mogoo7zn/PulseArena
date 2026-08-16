@@ -12,42 +12,42 @@
     {
       "task_id": "bc_warmstart_gpu0",
       "gpu_ids": [0],
-      "command": ["{python}", "{root}/training.pipelines.train_pipeline", "--profile", "local_constrained", "--plan", "hybrid_tactical_v2_bc_warmstart_ppo_pilot", "--phase", "ppo", "--execute", "--output-dir", "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/gpu0", "--port", "8870", "--seed", "20261001", "--total-env-steps", "8192", "--rollout-steps", "256"]
+      "command": ["{python}", "{root}/training/pipelines/train_pipeline.py", "--profile", "local_constrained", "--plan", "hybrid_tactical_v2_bc_warmstart_ppo_pilot", "--phase", "ppo", "--execute", "--output-dir", "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/gpu0", "--port", "8870", "--seed", "20261001", "--total-env-steps", "8192", "--rollout-steps", "256"]
     },
     {
       "task_id": "bc_warmstart_gpu1",
       "gpu_ids": [1],
-      "command": ["{python}", "{root}/training.pipelines.train_pipeline", "--profile", "local_constrained", "--plan", "hybrid_tactical_v2_bc_warmstart_ppo_pilot", "--phase", "ppo", "--execute", "--output-dir", "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/gpu1", "--port", "8871", "--seed", "20261002", "--total-env-steps", "8192", "--rollout-steps", "256"]
+      "command": ["{python}", "{root}/training/pipelines/train_pipeline.py", "--profile", "local_constrained", "--plan", "hybrid_tactical_v2_bc_warmstart_ppo_pilot", "--phase", "ppo", "--execute", "--output-dir", "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/gpu1", "--port", "8871", "--seed", "20261002", "--total-env-steps", "8192", "--rollout-steps", "256"]
     },
     {
       "task_id": "bc_warmstart_gpu2",
       "gpu_ids": [2],
-      "command": ["{python}", "{root}/training.pipelines.train_pipeline", "--profile", "local_constrained", "--plan", "hybrid_tactical_v2_bc_warmstart_ppo_pilot", "--phase", "ppo", "--execute", "--output-dir", "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/gpu2", "--port", "8872", "--seed", "20261003", "--total-env-steps", "8192", "--rollout-steps", "256"]
+      "command": ["{python}", "{root}/training/pipelines/train_pipeline.py", "--profile", "local_constrained", "--plan", "hybrid_tactical_v2_bc_warmstart_ppo_pilot", "--phase", "ppo", "--execute", "--output-dir", "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/gpu2", "--port", "8872", "--seed", "20261003", "--total-env-steps", "8192", "--rollout-steps", "256"]
     },
     {
       "task_id": "bc_warmstart_gpu3",
       "gpu_ids": [3],
-      "command": ["{python}", "{root}/training.pipelines.train_pipeline", "--profile", "local_constrained", "--plan", "hybrid_tactical_v2_bc_warmstart_ppo_pilot", "--phase", "ppo", "--execute", "--output-dir", "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/gpu3", "--port", "8873", "--seed", "20261004", "--total-env-steps", "8192", "--rollout-steps", "256"]
+      "command": ["{python}", "{root}/training/pipelines/train_pipeline.py", "--profile", "local_constrained", "--plan", "hybrid_tactical_v2_bc_warmstart_ppo_pilot", "--phase", "ppo", "--execute", "--output-dir", "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/gpu3", "--port", "8873", "--seed", "20261004", "--total-env-steps", "8192", "--rollout-steps", "256"]
     },
     {
       "task_id": "bc_warmstart_gpu4",
       "gpu_ids": [4],
-      "command": ["{python}", "{root}/training.pipelines.train_pipeline", "--profile", "local_constrained", "--plan", "hybrid_tactical_v2_bc_warmstart_ppo_pilot", "--phase", "ppo", "--execute", "--output-dir", "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/gpu4", "--port", "8874", "--seed", "20261005", "--total-env-steps", "8192", "--rollout-steps", "256"]
+      "command": ["{python}", "{root}/training/pipelines/train_pipeline.py", "--profile", "local_constrained", "--plan", "hybrid_tactical_v2_bc_warmstart_ppo_pilot", "--phase", "ppo", "--execute", "--output-dir", "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/gpu4", "--port", "8874", "--seed", "20261005", "--total-env-steps", "8192", "--rollout-steps", "256"]
     },
     {
       "task_id": "bc_warmstart_gpu5",
       "gpu_ids": [5],
-      "command": ["{python}", "{root}/training.pipelines.train_pipeline", "--profile", "local_constrained", "--plan", "hybrid_tactical_v2_bc_warmstart_ppo_pilot", "--phase", "ppo", "--execute", "--output-dir", "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/gpu5", "--port", "8875", "--seed", "20261006", "--total-env-steps", "8192", "--rollout-steps", "256"]
+      "command": ["{python}", "{root}/training/pipelines/train_pipeline.py", "--profile", "local_constrained", "--plan", "hybrid_tactical_v2_bc_warmstart_ppo_pilot", "--phase", "ppo", "--execute", "--output-dir", "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/gpu5", "--port", "8875", "--seed", "20261006", "--total-env-steps", "8192", "--rollout-steps", "256"]
     },
     {
       "task_id": "bc_warmstart_gpu6",
       "gpu_ids": [6],
-      "command": ["{python}", "{root}/training.pipelines.train_pipeline", "--profile", "local_constrained", "--plan", "hybrid_tactical_v2_bc_warmstart_ppo_pilot", "--phase", "ppo", "--execute", "--output-dir", "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/gpu6", "--port", "8876", "--seed", "20261007", "--total-env-steps", "8192", "--rollout-steps", "256"]
+      "command": ["{python}", "{root}/training/pipelines/train_pipeline.py", "--profile", "local_constrained", "--plan", "hybrid_tactical_v2_bc_warmstart_ppo_pilot", "--phase", "ppo", "--execute", "--output-dir", "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/gpu6", "--port", "8876", "--seed", "20261007", "--total-env-steps", "8192", "--rollout-steps", "256"]
     },
     {
       "task_id": "bc_warmstart_gpu7",
       "gpu_ids": [7],
-      "command": ["{python}", "{root}/training.pipelines.train_pipeline", "--profile", "local_constrained", "--plan", "hybrid_tactical_v2_bc_warmstart_ppo_pilot", "--phase", "ppo", "--execute", "--output-dir", "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/gpu7", "--port", "8877", "--seed", "20261008", "--total-env-steps", "8192", "--rollout-steps", "256"]
+      "command": ["{python}", "{root}/training/pipelines/train_pipeline.py", "--profile", "local_constrained", "--plan", "hybrid_tactical_v2_bc_warmstart_ppo_pilot", "--phase", "ppo", "--execute", "--output-dir", "training/artifacts/runs/hybrid_tactical_v2_8gpu_bc_warmstart_diagnostic_8192/gpu7", "--port", "8877", "--seed", "20261008", "--total-env-steps", "8192", "--rollout-steps", "256"]
     }
   ]
 }
