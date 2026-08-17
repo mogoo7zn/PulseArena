@@ -1,0 +1,17 @@
+{
+  "schema_version": 2,
+  "model_id": "hybrid_tactical_v2_ballistic_repair_gpu3_20260816",
+  "label": "Hybrid Tactical V2 Ballistic Repair Gpu3 20260816",
+  "kind": "tactical_actor_critic",
+  "checkpoint": "training/checkpoints/hybrid/hybrid_tactical_v2_ballistic_repair_gpu3_20260816.pt",
+  "input_dim": 142,
+  "hidden": 192,
+  "protocol": 2,
+  "observation_schema_version": 2,
+  "tactical_action_schema_version": 2,
+  "created_at": "2026-08-16T15:07:48.449195+00:00",
+  "training_run_id": "hybrid_tactical_v2_ballistic_repair_gpu3_20260816",
+  "reward_profile_id": "legal_window_pressure",
+  "description": "8-card ballistic_repair gpu3 checkpoint, env_steps=16384, 4 maps, BC warm-start, raw_step_calls=0, fallback≈0, decision_gen_consistent=true",
+  "metrics": {}
+}
