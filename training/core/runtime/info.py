@@ -1,7 +1,7 @@
 """Static metadata about a loaded agent model."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -15,3 +15,5 @@ class AgentModelInfo:
     hidden: int
     device: str
     metrics: dict[str, Any]
+    manifest_strength: str = ""
+    inference_profile: dict[str, Any] = field(default_factory=dict)

@@ -41,6 +41,10 @@ const AGENT_CONTROLLER_HYBRID := "hybrid"
 # Training-only spawn curriculum.  "safe" preserves the deployed respawn
 # behavior; "engagement_window" is opt-in for headless tactical collection.
 @export var training_spawn_policy: String = "safe"
+# Where the human_eval_recorder writes per-step JSONL when a human plays
+# against a non-scripted agent. Empty string falls back to
+# scripts/core/human_eval_recorder.gd DEFAULT_ROOT.
+@export var human_eval_replay_dir: String = ""
 
 func duplicate_config() -> MatchConfig:
 	var copy := MatchConfig.new()
@@ -67,6 +71,7 @@ func duplicate_config() -> MatchConfig:
 	copy.training_fast_mode = training_fast_mode
 	copy.reward_profile_id = reward_profile_id
 	copy.training_spawn_policy = training_spawn_policy
+	copy.human_eval_replay_dir = human_eval_replay_dir
 	return copy
 
 func total_players() -> int:
@@ -97,6 +102,7 @@ func to_dict() -> Dictionary:
 		"training_fast_mode": training_fast_mode,
 		"reward_profile_id": reward_profile_id,
 		"training_spawn_policy": training_spawn_policy,
+		"human_eval_replay_dir": human_eval_replay_dir,
 	}
 
 static func from_dict(data: Dictionary) -> MatchConfig:
@@ -124,6 +130,7 @@ static func from_dict(data: Dictionary) -> MatchConfig:
 	config.training_fast_mode = bool(data.get("training_fast_mode", false))
 	config.reward_profile_id = str(data.get("reward_profile_id", "baseline"))
 	config.training_spawn_policy = str(data.get("training_spawn_policy", "safe"))
+	config.human_eval_replay_dir = str(data.get("human_eval_replay_dir", ""))
 	return config
 
 static func _dict_from_variant(value: Variant) -> Dictionary:

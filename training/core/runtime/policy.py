@@ -108,6 +108,8 @@ class RuntimeAgentPolicy:
 
     @property
     def info(self) -> AgentModelInfo:
+        inference_profile = dict(self.manifest.get("inference_profile", {}))
+        manifest_strength = str(inference_profile.get("strength", "")).strip()
         return AgentModelInfo(
             model_id=self.model_id,
             kind=self.kind,
@@ -116,6 +118,8 @@ class RuntimeAgentPolicy:
             hidden=self.hidden,
             device=str(self.device),
             metrics=dict(self.manifest.get("metrics", {})),
+            manifest_strength=manifest_strength,
+            inference_profile=inference_profile,
         )
 
     @torch.no_grad()
@@ -160,6 +164,8 @@ class RuntimeAgentPolicy:
         self,
         tactical_features: list[float] | None = None,
         action_masks: dict[str, Any] | None = None,
+        strength_profile: str | None = None,
+        deterministic: bool = False,
     ) -> dict[str, Any]:
         masks = action_masks or {}
         if self.kind == "hybrid_tactical_prior":
@@ -171,6 +177,20 @@ class RuntimeAgentPolicy:
             features.append(0.0)
         obs = torch.tensor([features], dtype=torch.float32, device=self.device)
         outputs = self.model(obs)  # type: ignore[operator]
+        # Strength profile precedence: per-request > manifest inference_profile > normal.
+        from training.core.ppo.sampling import (
+            DEFAULT_STRENGTH,
+            resolve_strength_profile,
+            sample_masked_tactical_actions,
+        )
+        strength = (strength_profile or self.info.manifest_strength or "").strip()
+        if strength:
+            profile = resolve_strength_profile(strength)
+            temperature = profile["temperature"]
+            mask_soften = profile["mask_soften"]
+        else:
+            temperature = 1.0
+            mask_soften = 0.0
         head_confidences = [
             self._masked_max_probability(outputs[head][0], masks.get(head), count)
             for head, count in (
@@ -185,20 +205,20 @@ class RuntimeAgentPolicy:
             if isinstance(outputs.get("confidence"), torch.Tensor)
             else float(sum(head_confidences) / max(len(head_confidences), 1))
         )
+        batch = sample_masked_tactical_actions(
+            {head: outputs[head] for head in ("target_slot", "movement_mode", "fire_mode", "skill_mode")},
+            masks,
+            deterministic=deterministic,
+            temperature=temperature,
+            mask_soften=mask_soften,
+        )
         decision = {
-            "target_slot": self._masked_argmax(
-                outputs["target_slot"][0], masks.get("target_slot"), len(TACTICAL_TARGETS)
-            ),
-            "movement_mode": self._masked_argmax(
-                outputs["movement_mode"][0], masks.get("movement_mode"), len(TACTICAL_MOVEMENTS)
-            ),
-            "fire_mode": self._masked_argmax(
-                outputs["fire_mode"][0], masks.get("fire_mode"), len(TACTICAL_FIRE_MODES)
-            ),
-            "skill_mode": self._masked_argmax(
-                outputs["skill_mode"][0], masks.get("skill_mode"), len(TACTICAL_SKILL_MODES)
-            ),
+            "target_slot": int(batch.target_slot[0].detach().cpu().item()),
+            "movement_mode": int(batch.movement_mode[0].detach().cpu().item()),
+            "fire_mode": int(batch.fire_mode[0].detach().cpu().item()),
+            "skill_mode": int(batch.skill_mode[0].detach().cpu().item()),
             "confidence": confidence,
+            "strength_profile": strength or DEFAULT_STRENGTH,
         }
         return decision
 

@@ -168,15 +168,18 @@ class AgentRequestHandler(socketserver.StreamRequestHandler):
             }
         if cmd == "act_tactical":
             policy = self.registry.get(requested_model_id)
+            strength = str(request.get("strength_profile", "")).strip()
             decision = policy.act_tactical(
                 tactical_features=request.get("tactical_features"),
                 action_masks=request.get("action_masks"),
+                strength_profile=strength or None,
             )
             return {
                 "type": "tactical_decision",
                 "protocol": 2,
                 "request_id": request_id,
                 "model_id": policy.info.model_id,
+                "strength_profile": strength or policy.info.manifest_strength or "",
                 "latency_ms": round((time.perf_counter() - start) * 1000.0, 3),
                 "decision": {
                     "target_slot": int(decision["target_slot"]),

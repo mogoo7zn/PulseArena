@@ -28,6 +28,7 @@ AudioManager="*res://scripts/audio/audio_manager.gd"
 SettingsManager="*res://scripts/core/settings_manager.gd"
 GameFlowManager="*res://scripts/core/game_flow_manager.gd"
 InputRegistry="*res://scripts/core/input_registry.gd"
+HumanEvalRecorder="*res://scripts/core/human_eval_recorder.gd"
 
 [display]
 

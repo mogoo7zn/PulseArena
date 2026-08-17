@@ -11,6 +11,7 @@ var host: String = DEFAULT_HOST
 var port: int = DEFAULT_PORT
 var timeout_ms: int = DEFAULT_TIMEOUT_MS
 var model_id: String = ""
+var strength_profile: String = ""
 var peer: StreamPeerTCP
 var recv_buffer: String = ""
 var request_id: int = 0
@@ -25,6 +26,9 @@ func _init(config: AgentDifficultyConfig = null, seed: int = 0, host_value: Stri
 	timeout_ms = max(timeout_value_ms, 1)
 	model_id = model_id_value
 	fallback = ScriptedAgentController.new(config, seed)
+
+func set_strength_profile(profile: String) -> void:
+	strength_profile = profile.strip_edges()
 
 func reset() -> void:
 	current_action = PlayerAction.new()
@@ -74,6 +78,8 @@ func _request_model_action(observation: AgentObservation) -> PlayerAction:
 	}
 	if not model_id.is_empty():
 		payload["model_id"] = model_id
+	if not strength_profile.is_empty():
+		payload["strength_profile"] = strength_profile
 	var err := peer.put_data((JSON.stringify(payload) + "\n").to_utf8_buffer())
 	if err != OK:
 		_disconnect()

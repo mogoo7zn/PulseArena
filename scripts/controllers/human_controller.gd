@@ -23,6 +23,9 @@ func get_action(observation: AgentObservation, delta: float) -> PlayerAction:
 		action.aim = last_aim
 		action.normalize_vectors(last_aim)
 	last_aim = action.aim
+	# Best-effort human_eval recording (only when an agent is in the match).
+	if HumanEvalRecorder != null and HumanEvalRecorder.is_recording():
+		HumanEvalRecorder.record_step(observation, action)
 	return action
 
 func get_label() -> String:

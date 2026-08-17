@@ -31,18 +31,23 @@ def resolve_strength_profile(strength: str | None) -> dict[str, float]:
 
 def _masked_distribution(
     logits: torch.Tensor,
-    mask: torch.Tensor,
+    mask: torch.Tensor | list,
     temperature: float = 1.0,
     mask_soften: float = 0.0,
 ) -> torch.distributions.Categorical:
-    if logits.shape != mask.shape:
-        raise ValueError(
-            f"Mask shape {tuple(mask.shape)} does not match logits {tuple(logits.shape)}"
-        )
+    if not isinstance(mask, torch.Tensor):
+        mask = torch.as_tensor(mask)
     legal = mask.to(device=logits.device, dtype=torch.bool)
     if logits.dim() == 1:
         legal = legal.unsqueeze(0)
         logits = logits.unsqueeze(0)
+    elif logits.dim() == 2 and legal.dim() == 1:
+        # Mask is missing the batch dimension; broadcast it across the batch.
+        legal = legal.unsqueeze(0).expand(logits.shape[0], -1)
+    if logits.shape != legal.shape:
+        raise ValueError(
+            f"Mask shape {tuple(legal.shape)} does not match logits {tuple(logits.shape)}"
+        )
     if not torch.all(legal.any(dim=-1)):
         raise ValueError("Every tactical action head must have at least one legal action")
     if temperature <= 0.0:
@@ -51,8 +56,6 @@ def _masked_distribution(
         logits = logits / temperature
     if mask_soften > 0.0:
         illegal_penalty = mask_soften * logits.masked_fill(legal, torch.finfo(logits.dtype).min).masked_fill(~legal, 0.0).max(dim=-1, keepdim=True).values
-        # illegal_penalty is positive (the most-positive legal logit × mask_soften) and gets ADDED to illegal logits
-        # (subtracting a positive penalty from -inf keeps it -inf; here we OR it with the original -inf)
         illegal_logits = torch.finfo(logits.dtype).min
         logits = torch.where(legal, logits, illegal_logits + illegal_penalty)
     masked_logits = logits.masked_fill(~legal, torch.finfo(logits.dtype).min)

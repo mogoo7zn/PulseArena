@@ -316,6 +316,7 @@ func _create_roster() -> void:
 		var controller: PlayerController
 		if controller_kind == MatchConfig.AGENT_CONTROLLER_MODEL:
 			controller = ModelAgentControllerScript.new(difficulty, seed, config.agent_model_host, config.agent_model_port, config.agent_model_timeout_ms, model_id)
+			(controller as ModelAgentController).set_strength_profile(config.agent_difficulty)
 		elif controller_kind == MatchConfig.AGENT_CONTROLLER_HYBRID:
 			controller = HybridAgentControllerScript.new(difficulty, seed, config.agent_model_host, config.agent_model_port, config.agent_model_timeout_ms, model_id)
 			(controller as HybridAgentController).config = HybridAgentConfigScript.for_profile(config.reward_profile_id)
