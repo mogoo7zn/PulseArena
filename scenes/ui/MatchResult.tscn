@@ -5,3 +5,4 @@
 [node name="MatchResult" type="Control"]
 script = ExtResource("1_page")
 title = "Match Result"
+bgm_key = "match_end"

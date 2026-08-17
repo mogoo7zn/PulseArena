@@ -1,78 +1,41 @@
 {
   "schema_version": 3,
-  "default_model_id": "hybrid_tactical_v1",
+  "default_model_id": "hybrid_tactical_v2_promoted_normal_20260816",
   "models": [
     {
-      "model_id": "hybrid_tactical_v1",
-      "label": "Hybrid Tactical v1",
-      "manifest": "training/models/hybrid_tactical_v1_agent.json",
-      "kind": "hybrid_tactical_prior",
-      "protocol": 2,
-      "description": "Active protocol v2 tactical baseline. The model returns high-level decisions; Godot executes deterministic aim, fire gating, evasion, movement, and fallback logic."
-    },
-    {
-      "model_id": "hybrid_tactical_v2_ppo_expanded_candidate_20260802",
-      "label": "Hybrid Tactical v2 PPO Expanded Candidate",
-      "manifest": "training/models/hybrid_tactical_v2_ppo_expanded_candidate_20260802_agent.json",
-      "kind": "tactical_actor_critic",
-      "protocol": 2,
-      "description": "Imported Hybrid Tactical v2 trained policy."
-    },
-    {
-      "model_id": "hybrid_tactical_v2_ppo_resume_candidate_20260802",
-      "label": "Hybrid Tactical v2 PPO Resume Candidate",
-      "manifest": "training/models/hybrid_tactical_v2_ppo_resume_candidate_20260802_agent.json",
-      "kind": "tactical_actor_critic",
-      "protocol": 2,
-      "description": "Imported Hybrid Tactical v2 trained policy."
-    },
-    {
-      "model_id": "hybrid_tactical_v2_promoted_20260816",
-      "label": "Hybrid Tactical V2 Promoted 20260816",
-      "manifest": "training/models/hybrid_tactical_v2_promoted_20260816_agent.json",
-      "kind": "tactical_actor_critic",
-      "protocol": 2,
-      "description": "Imported Hybrid Tactical v2 trained policy."
-    },
-    {
       "model_id": "hybrid_tactical_v2_promoted_easy_20260816",
-      "label": "Hybrid Tactical V2 Promoted Easy 20260816",
+      "label": "Easy",
       "manifest": "training/models/hybrid_tactical_v2_promoted_easy_20260816_agent.json",
       "kind": "tactical_actor_critic",
-      "protocol": 2,
-      "description": "Imported Hybrid Tactical v2 trained policy."
+      "protocol": 2
     },
     {
       "model_id": "hybrid_tactical_v2_promoted_casual_20260816",
-      "label": "Hybrid Tactical V2 Promoted Casual 20260816",
+      "label": "Casual",
       "manifest": "training/models/hybrid_tactical_v2_promoted_casual_20260816_agent.json",
       "kind": "tactical_actor_critic",
-      "protocol": 2,
-      "description": "Imported Hybrid Tactical v2 trained policy."
+      "protocol": 2
     },
     {
       "model_id": "hybrid_tactical_v2_promoted_normal_20260816",
-      "label": "Hybrid Tactical V2 Promoted Normal 20260816",
+      "label": "Normal",
       "manifest": "training/models/hybrid_tactical_v2_promoted_normal_20260816_agent.json",
       "kind": "tactical_actor_critic",
-      "protocol": 2,
-      "description": "Imported Hybrid Tactical v2 trained policy."
+      "protocol": 2
     },
     {
       "model_id": "hybrid_tactical_v2_promoted_strong_20260816",
-      "label": "Hybrid Tactical V2 Promoted Strong 20260816",
+      "label": "Strong",
       "manifest": "training/models/hybrid_tactical_v2_promoted_strong_20260816_agent.json",
       "kind": "tactical_actor_critic",
-      "protocol": 2,
-      "description": "Imported Hybrid Tactical v2 trained policy."
+      "protocol": 2
     },
     {
       "model_id": "hybrid_tactical_v2_promoted_elite_20260816",
-      "label": "Hybrid Tactical V2 Promoted Elite 20260816",
+      "label": "Elite",
       "manifest": "training/models/hybrid_tactical_v2_promoted_elite_20260816_agent.json",
       "kind": "tactical_actor_critic",
-      "protocol": 2,
-      "description": "Imported Hybrid Tactical v2 trained policy."
+      "protocol": 2
     }
   ]
 }

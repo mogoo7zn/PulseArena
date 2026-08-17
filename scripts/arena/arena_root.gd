@@ -73,6 +73,12 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	if config != null:
 		call_deferred("_start_match")
+	# Switch BGM to the track for the active map (one of arena_cross / neon_docks / reactor_ring / skyline_yard).
+	var am := get_node_or_null("/root/AudioManager")
+	if am != null and config != null:
+		var map_key: String = AudioManager.MAP_BGM_KEY.get(config.map_id, "")
+		if not map_key.is_empty():
+			am.play_bgm(map_key)
 
 func configure(match_config: MatchConfig) -> void:
 	config = match_config.duplicate_config()

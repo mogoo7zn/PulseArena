@@ -5,3 +5,4 @@
 [node name="MatchSetup" type="Control"]
 script = ExtResource("1_page")
 title = "Match Setup"
+bgm_key = "match_start"

@@ -15,7 +15,6 @@ var agent_model_labels: PackedStringArray = PackedStringArray()
 var agent_model_descriptions: Dictionary = {}
 var map_buttons: Dictionary = {}
 var mode_buttons: Dictionary = {}
-var difficulty_option: OptionButton
 var agent_type_option: OptionButton
 var agent_model_option: OptionButton
 var details_label: Label
@@ -28,6 +27,9 @@ func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	_build_ui()
 	_select_mode(selected_key)
+	var am := get_node_or_null("/root/AudioManager")
+	if am != null:
+		am.play_bgm("menu")
 
 func _build_ui() -> void:
 	var bg := PulseBackground.new()
@@ -249,17 +251,6 @@ func _side_panel() -> Control:
 	_add_mode_row(box, "Human vs 2 Agents", "Pressure", "1H / 2AI", "human_vs_2_agents")
 	_add_mode_row(box, "Human vs 3 Agents", "Chaos", "1H / 3AI", "human_vs_3_agents")
 	_add_mode_row(box, "2 Humans vs 2 Agents", "Team", "2H / 2AI", "two_humans_vs_two_agents")
-	difficulty_option = OptionButton.new()
-	var difficulty_names: PackedStringArray = PackedStringArray(["easy", "casual", "normal", "strong", "elite"])
-	for name: String in difficulty_names:
-		difficulty_option.add_item(name.capitalize())
-	difficulty_option.select(2)
-	difficulty_option.item_selected.connect(func(index: int) -> void:
-		difficulty = difficulty_names[index]
-		_sync_agent_model_for_difficulty()
-		_update_details()
-	)
-	box.add_child(_labeled("Agent Difficulty", difficulty_option))
 	agent_type_option = OptionButton.new()
 	var agent_type_values: PackedStringArray = PackedStringArray([MatchConfig.AGENT_CONTROLLER_SCRIPTED, MatchConfig.AGENT_CONTROLLER_HYBRID])
 	var agent_type_labels: PackedStringArray = PackedStringArray(["Scripted Agent", "Hybrid Tactical Agent"])
@@ -282,6 +273,7 @@ func _side_panel() -> Control:
 	agent_model_option.item_selected.connect(func(index: int) -> void:
 		if index >= 0 and index < agent_model_ids.size():
 			agent_model_id = agent_model_ids[index]
+			difficulty = _difficulty_from_model_id(agent_model_id)
 			_update_details()
 	)
 	box.add_child(_labeled("Agent Model", agent_model_option))
@@ -336,33 +328,22 @@ func _load_agent_model_catalog() -> void:
 	if default_model_id.is_empty() or agent_model_ids.find(default_model_id) < 0:
 		default_model_id = agent_model_ids[0]
 	agent_model_id = default_model_id
-	# Then align with the default difficulty (normal).
-	_sync_agent_model_for_difficulty()
+	difficulty = _difficulty_from_model_id(agent_model_id)
 
 func _sync_agent_model_option() -> void:
 	if agent_model_option == null:
 		return
 	agent_model_option.disabled = agent_type == MatchConfig.AGENT_CONTROLLER_SCRIPTED
 
-func _sync_agent_model_for_difficulty() -> void:
-	# When the player picks a difficulty, point the agent at the matching
-	# strength-tier model registered under the same name suffix.
-	var suffix := "_" + difficulty
-	for i in range(agent_model_ids.size()):
-		var id := agent_model_ids[i]
-		if id.ends_with(suffix) and id.begins_with("hybrid_tactical_v2_promoted"):
-			agent_model_id = id
-			if agent_model_option != null:
-				agent_model_option.select(i)
-			return
-	# Fallback: pick the matching tier by exact id, or stay on whatever's selected.
-	var exact := "hybrid_tactical_v2_promoted_" + difficulty + "_" + _today_stamp()
-	if agent_model_ids.find(exact) >= 0:
-		agent_model_id = exact
-
-func _today_stamp() -> String:
-	var d := Time.get_date_dict_from_system()
-	return "%04d%02d%02d" % [int(d["year"]), int(d["month"]), int(d["day"])]
+func _difficulty_from_model_id(model_id_value: String) -> String:
+	# Extract the strength suffix (easy/casual/normal/strong/elite) from a
+	# promoted-tier model id like "..._promoted_normal_20260816". Falls back
+	# to "normal" for non-tier model ids.
+	var known := ["easy", "casual", "normal", "strong", "elite"]
+	for tier in known:
+		if model_id_value.contains("_" + tier + "_"):
+			return tier
+	return "normal"
 
 func _selected_agent_model_label() -> String:
 	var index := agent_model_ids.find(agent_model_id)
