@@ -5,11 +5,14 @@ import errno
 import json
 import re
 import socketserver
+import threading
 import time
 from dataclasses import dataclass
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import RLock
 from typing import Any
+from urllib.parse import urlparse
 
 from training.core.model_runtime import RuntimeAgentPolicy, resolve_path
 
@@ -87,9 +90,18 @@ class AgentPolicyRegistry:
                 "manifest": str(entry.manifest_path),
                 "loaded": entry.model_id in self._policies,
                 "default": entry.model_id == self.default_model_id,
+                "kind": _safe_read_kind(entry.manifest_path),
             }
             for entry in self.entries.values()
         ]
+
+
+def _safe_read_kind(manifest_path: Path) -> str:
+    try:
+        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return ""
+    return str(data.get("kind", ""))
 
 
 class AgentRequestHandler(socketserver.StreamRequestHandler):
@@ -222,6 +234,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8766)
     parser.add_argument("--device", default="auto", type=validate_inference_device)
+    parser.add_argument("--http-host", default="127.0.0.1", help="HTTP façade host (browser-friendly interface).")
+    parser.add_argument("--http-port", type=int, default=0, help="If > 0, also serve a small HTTP API + HTML page on this port.")
     parser.add_argument("--print-info", action="store_true")
     return parser.parse_args()
 
@@ -255,7 +269,202 @@ def main() -> None:
         return
     with ThreadedAgentServer((args.host, args.port), AgentRequestHandler, registry) as server:
         print(json.dumps({"agent_server": "listening", "host": args.host, "port": args.port, "protocol": "jsonl_v1_v2"}, ensure_ascii=False), flush=True)
+        if args.http_port > 0:
+            start_http_facade(args, registry)
         server.serve_forever()
+
+
+def start_http_facade(args: argparse.Namespace, registry: "AgentPolicyRegistry") -> None:
+    """Start the small HTTP façade in a daemon thread."""
+    handler = _build_http_handler(registry, http_port=args.http_port, tcp_port=args.port)
+    server = ThreadingHTTPServer((args.http_host, args.http_port), handler)
+    server.daemon_threads = True
+    thread = threading.Thread(target=server.serve_forever, name="http-facade", daemon=True)
+    thread.start()
+    print(json.dumps({"http_facade": "listening", "host": args.http_host, "port": server.server_address[1]}, ensure_ascii=False), flush=True)
+
+
+def _build_http_handler(registry: "AgentPolicyRegistry", http_port: int, tcp_port: int):
+    class HttpHandler(BaseHTTPRequestHandler):
+        def log_message(self, format: str, *args: Any) -> None:  # noqa: A002
+            return  # silence stderr access log
+
+        def do_GET(self) -> None:  # noqa: N802
+            parsed = urlparse(self.path)
+            if parsed.path == "/":
+                self._render_index()
+            elif parsed.path == "/api/health":
+                self._json_ok({"status": "ok", "tcp_port": tcp_port, "http_port": http_port, "models": len(registry.entries)})
+            elif parsed.path == "/api/models":
+                self._json_ok({"models": registry.summaries()})
+            else:
+                self._json_error(404, "not found")
+
+        def do_POST(self) -> None:  # noqa: N802
+            parsed = urlparse(self.path)
+            if parsed.path == "/api/act_tactical":
+                self._handle_act_tactical()
+            else:
+                self._json_error(404, "not found")
+
+        def _render_index(self) -> None:
+            summaries = registry.summaries()
+            rows = []
+            for summary in summaries:
+                # Read the manifest directly so the page renders even for
+                # models whose checkpoint file is missing on disk.
+                try:
+                    manifest_data = json.loads(Path(summary["manifest"]).read_text(encoding="utf-8"))
+                    strength = str(manifest_data.get("inference_profile", {}).get("strength", ""))
+                except (OSError, json.JSONDecodeError):
+                    strength = ""
+                rows.append(
+                    f"<tr><td><code>{_esc(summary['model_id'])}</code></td>"
+                    f"<td>{_esc(summary['label'])}</td>"
+                    f"<td>{_esc(summary.get('kind', ''))}</td>"
+                    f"<td>{_esc(strength) or '—'}</td></tr>"
+                )
+            html = (
+                "<!doctype html><html><head><meta charset='utf-8'>"
+                "<title>Pulse Arena Hybrid Tactical — 5-tier HTTP demo</title>"
+                "<style>body{font-family:system-ui,sans-serif;max-width:880px;margin:24px auto;padding:0 16px;color:#1f2937}"
+                "h1{font-size:20px;margin:0 0 4px}h2{font-size:14px;color:#6b7280;margin:0 0 16px}"
+                "table{border-collapse:collapse;width:100%}td,th{border:1px solid #e5e7eb;padding:6px 8px;font-size:13px;text-align:left}"
+                "code{font-family:ui-monospace,monospace;font-size:12px}"
+                "form{margin:24px 0;padding:16px;border:1px solid #e5e7eb;border-radius:8px}"
+                "label{display:block;font-size:13px;margin:6px 0 2px}"
+                "input,select{font-size:13px;padding:4px 6px}"
+                "button{margin-top:8px;padding:6px 12px;background:#2563eb;color:#fff;border:0;border-radius:4px;cursor:pointer}"
+                "pre{background:#f9fafb;padding:8px;border-radius:4px;font-size:12px;overflow:auto}"
+                "</style></head><body>"
+                "<h1>Pulse Arena · Hybrid Tactical HTTP façade</h1>"
+                "<h2>9 models / 5 difficulty tiers / 1 checkpoint per tier</h2>"
+                "<table><thead><tr><th>model_id</th><th>label</th><th>kind</th><th>inference_profile.strength</th></tr></thead>"
+                f"<tbody>{''.join(rows)}</tbody></table>"
+                "<form id='form'>"
+                "<label>model_id (default tier matches strength): "
+                "<select name='model_id'>"
+                + "".join(
+                    f"<option value='{_esc(s['model_id'])}'>{_esc(s['model_id'])}</option>"
+                    for s in summaries
+                )
+                + "</select></label>"
+                "<label>strength_profile (optional; falls back to manifest.inference_profile.strength): "
+                "<select name='strength_profile'>"
+                "<option value=''>(none)</option>"
+                "<option value='easy'>easy (T=1.6 soften=0.30 safe=0.55)</option>"
+                "<option value='casual'>casual (T=1.1 soften=0.20 safe=0.65)</option>"
+                "<option value='normal'>normal (T=0.85 soften=0.10 safe=0.75)</option>"
+                "<option value='strong'>strong (T=0.55 soften=0.05 safe=0.85)</option>"
+                "<option value='elite'>elite (T=0.25 soften=0.0 safe=0.95)</option>"
+                "</select></label>"
+                "<label>tactical_features (142 floats, comma-separated; zeros are fine): "
+                "<input name='features' size='80' value='"
+                + ",".join(["0.0"] * 142)
+                + "'></label>"
+                "<label>action_masks preset: "
+                "<select name='mask_preset'>"
+                "<option value='all'>all-True</option>"
+                "<option value='no_fire'>no fire_mode</option>"
+                "<option value='no_target'>no target_slot 0..2</option>"
+                "</select></label>"
+                "<button type='submit'>Run act_tactical</button>"
+                "</form>"
+                "<h2>Response</h2><pre id='out'>Submit the form to see JSON…</pre>"
+                "<script>"
+                "const f=document.getElementById('form'),out=document.getElementById('out');"
+                "f.addEventListener('submit',async e=>{e.preventDefault();out.textContent='…';"
+                "const fd=new FormData(f);"
+                "const masks=(()=>{"
+                "  const p=fd.get('mask_preset');const all=()=>Array.from({length:1},()=>true);"
+                "  let ts=[1,1,1,1,1,1,1],mv=[1,1,1,1,1,1,1,1,1,1,1,1],fm=[1,1,1,1,1,1],sk=[1,1,1,1,1,1];"
+                "  if(p==='no_fire')fm=[0,0,0,0,0,0];"
+                "  if(p==='no_target')ts=[0,0,0,1,1,1,1];"
+                "  return {target_slot:ts,movement_mode:mv,fire_mode:fm,skill_mode:sk};"
+                "})();"
+                "const r=await fetch('/api/act_tactical',{method:'POST',headers:{'Content-Type':'application/json'},"
+                "body:JSON.stringify({"
+                "  model_id:fd.get('model_id'),"
+                "  strength_profile:fd.get('strength_profile')||null,"
+                "  tactical_features:fd.get('features').split(',').map(Number),"
+                "  action_masks:masks"
+                "})});"
+                "out.textContent=JSON.stringify(await r.json(),null,2);"
+                "});"
+                "</script>"
+                "</body></html>"
+            )
+            body = html.encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _handle_act_tactical(self) -> None:
+            length = int(self.headers.get("Content-Length", "0") or 0)
+            raw = self.rfile.read(length) if length else b""
+            try:
+                request = json.loads(raw.decode("utf-8")) if raw else {}
+            except json.JSONDecodeError as exc:
+                self._json_error(400, f"invalid JSON body: {exc}")
+                return
+            model_id = request.get("model_id") or ""
+            try:
+                policy = registry.get(model_id or None)
+            except ValueError as exc:
+                self._json_error(404, str(exc))
+                return
+            strength = str(request.get("strength_profile", "") or "").strip()
+            try:
+                decision = policy.act_tactical(
+                    tactical_features=request.get("tactical_features"),
+                    action_masks=request.get("action_masks"),
+                    strength_profile=strength or None,
+                )
+            except Exception as exc:  # noqa: BLE001
+                self._json_error(500, f"act_tactical failed: {exc}")
+                return
+            self._json_ok({
+                "model_id": policy.info.model_id,
+                "strength_profile": strength or policy.info.manifest_strength or "",
+                "decision": {
+                    "target_slot": int(decision["target_slot"]),
+                    "movement_mode": int(decision["movement_mode"]),
+                    "fire_mode": int(decision["fire_mode"]),
+                    "skill_mode": int(decision["skill_mode"]),
+                    "confidence": float(decision.get("confidence", 0.0)),
+                    "protocol_version": 2,
+                },
+            })
+
+        def _json_ok(self, payload: dict[str, Any]) -> None:
+            body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _json_error(self, status: int, message: str) -> None:
+            body = json.dumps({"error": message}, ensure_ascii=False).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+    return HttpHandler
+
+
+def _esc(value: str) -> str:
+    return (
+        value.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+    )
 
 
 if __name__ == "__main__":
