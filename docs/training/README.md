@@ -20,5 +20,3 @@ Training design, implementation notes, operational runbooks, and current experim
 ## Status
 
 - [Tactical RL Progress](status/tactical-rl-progress.md)
-
-Historical implementation plans and design specs remain under [superpowers](../superpowers/).

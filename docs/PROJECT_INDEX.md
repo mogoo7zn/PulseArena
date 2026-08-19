@@ -5,11 +5,11 @@
 ## 0. 接续训练
 
 - **`docs/plan/README.md`**——下一次训练怎么开始，每一步命令、硬门槛、回滚条件。
-- **`docs/plan/00-项目基线与现状.md`**——当前 active 状态、政策与已知风险。
-- **`docs/plan/01-接续训练阶段总览.md`**——阶段 0–4 的目标 / 命令 / 验收 / 退出条件。
+- **`docs/plan/00-baseline-and-status.md`**——当前 active 状态、政策与已知风险。
+- **`docs/plan/01-continuation-overview.md`**——阶段 0–4 的目标 / 命令 / 验收 / 退出条件。
 - **`docs/plan/02-GPU-4-isolated-diagnostic.md`**——下一阶段先跑的诊断。
-- **`docs/plan/03-复合修复与 TDD.md`**——动手前的红→绿循环。
-- **`docs/plan/04-晋级与生产部署.md`**——什么时候把候选模型推到默认服务。
+- **`docs/plan/03-composite-fix-and-tdd.md`**——动手前的红→绿循环。
+- **`docs/plan/04-promotion-and-deployment.md`**——什么时候把候选模型推到默认服务。
 
 ## 1. 项目核心代码（活跃）
 
@@ -47,10 +47,9 @@
 - `docs/design/` —— UI 设计。
 - `docs/operations/` —— Linux / 项目结构 / 服务器训练 bundle。
 - `docs/training/` —— 训练策略、流程、handoff、runbook。
-- `docs/training/legacy/` —— 历史训练报告与清理记录（**只读**）。
 - `docs/training/status/` —— 当前进行中的活跃进度报告。
-- `docs/superpowers/` —— 历史 design / plan 档案（**只读**）。
 - `docs/plan/` —— **接续训练计划（写在这里）**。
+- `docs/deployment/` —— 网页对战与演示部署。
 
 ## 5. 测试
 

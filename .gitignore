@@ -17,6 +17,13 @@ htmlcov/
 !.env.example
 training/configs/local_settings.json
 
+# Local agent and IDE skills/caches
+.agents/
+.claude/
+.gemini/
+.codex/
+docs/skills/
+
 # Godot and local tools
 .godot/
 .godot_user/
@@ -69,3 +76,13 @@ archive/**/*.translation
 .idea/
 Thumbs.db
 .DS_Store
+
+# LaTeX compilation auxiliary files
+docs/paper/*.aux
+docs/paper/*.bbl
+docs/paper/*.blg
+docs/paper/*.fdb_latexmk
+docs/paper/*.fls
+docs/paper/*.out
+docs/paper/*.toc
+docs/paper/*.xdv

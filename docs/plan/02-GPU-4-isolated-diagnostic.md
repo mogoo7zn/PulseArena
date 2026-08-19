@@ -1,6 +1,6 @@
 # 阶段 1：GPU-4 isolated diagnostic
 
-> **输入**：阶段 0 的决策（`00-项目基线与现状.md` 末尾的决策表）。  
+> **输入**：阶段 0 的决策（`00-baseline-and-status.md` 末尾的决策表）。  
 > **目标**：在 1 张 GPU（推荐 GPU-4）跑 `tactical_legal_window_pressure_four_map_ballistic_repair`，把 08-06 / 08-08 修复方向的"是否真有效"用数据证明。  
 > **时间预算**：collect ≈ 30 分钟、bc ≈ 20 分钟、ppo 16,384 env-steps ≈ 60–90 分钟（视磁盘 IO）；总计 2–3 小时。  
 > **风险**：raw-step leak、端口冲突、GPU OOM、collect 阶段 Godot 崩溃。

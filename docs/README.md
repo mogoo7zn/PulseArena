@@ -10,10 +10,5 @@
 - [Training](training/README.md)
 - [Operations](operations/README.md)
 - [UI Design](design/README.md)
+- [Deployment](deployment/web-playtest-deployment.md)
 
-## Development Process
-
-- [Plans](superpowers/plans/_archived/) — 已完成的历史实施计划（只读）
-- [Specs](superpowers/specs/_archived/) — 已完成的历史设计稿（只读）
-
-所有 2026-07-30 至 2026-08-08 期间的 design / plan 文档已统一迁移到 `superpowers/plans/_archived/` 与 `superpowers/specs/_archived/`，主目录只保留一份示例（`superpowers/plans/2026-07-30-tactical-ppo-foundation.md`）。后续如有新 spec/plan，按 `docs/plan/` 走。

@@ -17,19 +17,19 @@
 | 文件 | 作用 |
 |---|---|
 | `README.md` | 本文件——总入口、阶段地图、运行前置条件。 |
-| `00-项目基线与现状.md` | 当前 active 状态、政策、模型目录、已知风险。读完才能开始动手。 |
-| `01-接续训练阶段总览.md` | 阶段 0–4 的目标 / 命令 / 验收 / 退出条件一张图（**2026-08-16 已追加用户决策 D1–D4**）。 |
+| `00-baseline-and-status.md` | 当前 active 状态、政策、模型目录、已知风险。读完才能开始动手。 |
+| `01-continuation-overview.md` | 阶段 0–4 的目标 / 命令 / 验收 / 退出条件一张图（**2026-08-16 已追加用户决策 D1–D4**）。 |
 | `02-GPU-4-isolated-diagnostic.md` | 阶段 1 的实操细节：先把 `legal_window_pressure` 在 GPU-4 跑通 isolated diagnostic。 |
-| `03-复合修复与-TDD.md` | 阶段 2 的实操细节：把 08-06 / 08-08 的修复按红→绿循环跑完。 |
-| `04-晋级与生产部署.md` | 阶段 3 / 4：从候选晋级默认服务的判定标准。 |
-| `05-强度分层与human-eval.md` | 阶段 5（2026-08-16 新增）：5 档强度分层实现 + human eval 接入 + 菜单集成。 |
-| `06-持续学习闭环.md` | 阶段 6（2026-08-16 新增）：人机对局 → replay → BC 重训 → 5 档自动调节。 |
+| `03-composite-fix-and-tdd.md` | 阶段 2 的实操细节：把 08-06 / 08-08 的修复按红→绿循环跑完。 |
+| `04-promotion-and-deployment.md` | 阶段 3 / 4：从候选晋级默认服务的判定标准。 |
+| `05-strength-tier-and-human-eval.md` | 阶段 5（2026-08-16 新增）：5 档强度分层实现 + human eval 接入 + 菜单集成。 |
+| `06-continuous-learning-loop.md` | 阶段 6（2026-08-16 新增）：人机对局 → replay → BC 重训 → 5 档自动调节。 |
 
 ---
 
 ## 8. 2026-08-16 用户新确认的目标（D1–D4）
 
-详见 `01-接续训练阶段总览.md` 末尾的"用户新确认的目标"段。简述：
+详见 `01-continuation-overview.md` 末尾的"用户新确认的目标"段。简述：
 
 - **D1**：同一份模型 + 不同推理参数做强度分层（1 份 checkpoint 导出 5 档）。
 - **D2**：human_eval 中档 `win_rate ∈ [0.50, 0.75]`（中档必须"打得有来有回"）。
@@ -97,13 +97,13 @@ candidate:
 
 | 阶段 | 目标 | 命令入口 | 退出条件 | 文档 |
 |---|---|---|---|---|
-| 0 | 看懂现状，决定要不要先补代码 | `git status` + 读 `00-项目基线与现状.md` | 形成"是否需要新写修复 plan"的决定 | `00-项目基线与现状.md` |
+| 0 | 看懂现状，决定要不要先补代码 | `git status` + 读 `00-baseline-and-status.md` | 形成"是否需要新写修复 plan"的决定 | `00-baseline-and-status.md` |
 | 1 | GPU-4 isolated diagnostic | `training/pipeline/train_pipeline.py --profile local_constrained --plan tactical_legal_window_pressure_four_map_ballistic_repair --phase all --execute`（具体见 `02-`） | `rollout_audit.json` 通过 6 条硬门槛 | `02-GPU-4-isolated-diagnostic.md` |
-| 2 | 复合修复的 TDD 红→绿 | `tests/run_tests.gd` + `tests/unit/*.py` | 全绿 + 全 4 张地图都有 cover_event | `03-复合修复与-TDD.md` |
-| 3 | 扩训（8 卡 BC warm-start + PPO resume） | `training/orchestration/multi_gpu_orchestrator.py` + `--phase ppo-multi --execute` | 阶段 1 + 阶段 2 的门槛 + paired eval | `04-晋级与生产部署.md` |
-| 4 | 推送到默认服务 | `import_trained_model.py --update-catalog` | human eval 通过 + 6 个月无回退 | `04-晋级与生产部署.md` |
-| 5 | 5 档强度分层 + human eval + 菜单 | `sampler.py` + `main_menu.gd` + `evaluate_tactical_candidate.py` | 5 档胜率严格单调 + human eval 中档 [0.50, 0.75] | `05-强度分层与human-eval.md` |
-| 6 | 持续学习闭环 | `human_eval_harness.py` + `continual_bc_<YYYYMMDD>` | 6 个月内 5 档胜率稳定在目标区间 | `06-持续学习闭环.md` |
+| 2 | 复合修复的 TDD 红→绿 | `tests/run_tests.gd` + `tests/unit/*.py` | 全绿 + 全 4 张地图都有 cover_event | `03-composite-fix-and-tdd.md` |
+| 3 | 扩训（8 卡 BC warm-start + PPO resume） | `training/orchestration/multi_gpu_orchestrator.py` + `--phase ppo-multi --execute` | 阶段 1 + 阶段 2 的门槛 + paired eval | `04-promotion-and-deployment.md` |
+| 4 | 推送到默认服务 | `import_trained_model.py --update-catalog` | human eval 通过 + 6 个月无回退 | `04-promotion-and-deployment.md` |
+| 5 | 5 档强度分层 + human eval + 菜单 | `sampler.py` + `main_menu.gd` + `evaluate_tactical_candidate.py` | 5 档胜率严格单调 + human eval 中档 [0.50, 0.75] | `05-strength-tier-and-human-eval.md` |
+| 6 | 持续学习闭环 | `human_eval_harness.py` + `continual_bc_<YYYYMMDD>` | 6 个月内 5 档胜率稳定在目标区间 | `06-continuous-learning-loop.md` |
 
 ---
 

@@ -1,0 +1,108 @@
+# 项目基线与现状
+
+> **目的**：开始阶段 1 之前，把仓库当前的"是什么"和"不是什么"写清楚。这一份是后续所有命令的前置阅读。
+>
+> **对应基线报告**：`docs/training/status/tactical-rl-progress.md`（最后更新 2026-08-04）  
+> **对应历史档案**：`docs/training/legacy/status_reports/`（5 份 8 月 1–4 日报告）  
+> **对应设计稿**：`docs/superpowers/specs/_archived/2026-08-06-high-playability-combat-loop-repair-design.md`、`2026-08-08-ballistic-lane-and-reserve-repair-design.md`
+
+---
+
+## 1. 仓库健康度
+
+| 维度 | 状态 |
+|---|---|
+| Git 工作区 | 52 个 modified、3 个 untracked plan、3 份 untracked 报告。**未提交的改动需要先用阶段 0 决定保留与否。** |
+| Godot 协议 | v2（feature 142 / mask 7·12·6·6 / 4 head）稳定。 |
+| Python 训练栈 | PyTorch 2.5.1+cu121、8 卡 A100-SXM4-80GB 已验证。 |
+| 评估器 | `evaluate_tactical_candidate.py --runner godot-service` 已接入；缺真实 paired/human gate。 |
+| 默认服务 | `hybrid_tactical_v1`（baseline prior）。**无 RL 模型被晋升**。 |
+
+## 2. 已交付、已验证
+
+| 任务 | 内容 | 状态 |
+|---|---|---|
+| Task 1 | 数据质量门 | ✅ 7/7 unittest 通过 |
+| Task 2 | Godot tactical Step API | ✅ Godot unit + static check + TCP smoke 全绿 |
+| Task 3 | Masked Tactical PPO/GAE | ✅ 6/6 unittest + CUDA micro-update 通过 |
+| Task 4 | 单 worker CUDA PPO 闭环 | ✅ 512 env-step pilot 完成 |
+| Task 5 | 固定 seed 评测 gate/report | ✅ 4/4 unittest；**未接入真实 Godot paired runner** |
+| Task 6 | 8 卡并行 pilot | ✅ 8 worker returncode=0；**非同步 learner** |
+| Task 7 | BC warm-start PPO diagnostic | ✅ fallback 17%→0.06%，damage 0.4→10.8 |
+| Task 8 | BC warm-start expanded | ✅ env_steps=529,940，safety override 6.96% |
+| Task 9 | PPO checkpoint 续训 | ✅ env_steps=2,097,664，damage=323.44，win=7,600 |
+| Task 10 | 服务链路 self-play 评测 smoke | ✅ service_backed_match=1.0，**promotion gates 缺 paired/human** |
+
+## 3. 已就位、未验证（**这是接续训练要补的"坑"**）
+
+下表汇总 `git status` 里 52 个 modified 文件 + 3 份未提交计划对应的内容：
+
+| 模块 | 文件 | 设计稿来源 | 验证需求 |
+|---|---|---|---|
+| Decision 账本 | `arena_root.gd` + `reward_calculator.gd` + `environment_bridge.gd` + `tactical_online_trainer.py` | `2026-08-04-four-map-common-combat-resource-foundation-design.md` + `2026-08-04-pressure-reward-accountability-design.md` | `tests/run_tests.gd` + `test_tactical_online_trainer.py` 红→绿 |
+| 资源兑现账本 | `pickup.gd` + `player.gd` + `reward_config.gd` + `arena_root.gd` + `reward_calculator.gd` | 同上 | `reward_calculator_profile_test.gd` + Python audit |
+| 4 张地图 source-tagged 事件 | `dungeon/sky_city/jungle/mist_world_rule.gd` + `arena_root.gd` + `reward_calculator.gd` | 同上 | `reward_calculator_profile_test.gd` + 1-match smoke |
+| ballistic lane 共享 | `ballistic_aim_solver.gd` + `tactical_feature_builder.gd` + `movement_executor.gd` | `2026-08-08-ballistic-lane-and-reserve-repair-design.md` | `tests/run_tests.gd` + plan test |
+| reserve 拆原因 | `fire_control.gd` + `hybrid_combat_executor.gd` + `environment_bridge.gd` + `tactical_online_trainer.py` | 同上 | `test_tactical_online_trainer.py` + `tactical_training_protocol_test.gd` |
+| cover→re-engage 生命周期 | `tactical_online_trainer.py` | `2026-08-06-high-playability-combat-loop-repair-design.md` | `test_tactical_online_trainer.py` |
+| pressure 控件暴露 | `hybrid_agent_config.gd` + `tactical_teacher.gd` + `hybrid_agent_controller.gd` + `fire_control.gd` | 同上 | `tests/run_tests.gd` |
+
+**结论**：阶段 1 直接跑 PPO 之前，必须先把这些"代码就位但未跑测试"的文件**逐项跑 TDD 红→绿**。详见 `03-composite-fix-and-tdd.md`。
+
+## 4. 当前模型目录与候选幽灵
+
+```text
+training/models/model_catalog.json:
+  default_model_id: hybrid_tactical_v1
+  models:
+    - hybrid_tactical_v1                                (active, prior)
+    - hybrid_tactical_v2_ppo_expanded_candidate_20260802   (candidate)
+    - hybrid_tactical_v2_ppo_resume_candidate_20260802     (candidate)
+```
+
+manifest 存在但**未登记到 catalog** 的"幽灵候选"：
+
+| model_id | manifest | 最近一次评估位置 |
+|---|---|---|
+| `pressure_contact_reset_fallback_free_candidate` | `training/models/pressure_contact_reset_fallback_free_candidate_agent.json` | `training/artifacts/runs/evaluations/pressure_contact_reset_fallback_free_service_smoke/` |
+| `pressure_curriculum_geometric_fire_gpu7_candidate` | `training/models/pressure_curriculum_geometric_fire_gpu7_candidate_agent.json` | `training/artifacts/runs/evaluations/pressure_curriculum_geometric_fire_gpu7_service_smoke/` |
+| `pressure_curriculum_resource_gpu6_candidate` | `training/models/pressure_curriculum_resource_gpu6_candidate_agent.json` | `training/artifacts/runs/evaluations/pressure_curriculum_resource_gpu6_service_smoke_after_pressure_continuity_fix/` |
+
+**接续训练决策**（阶段 0 期间需要确认）：
+
+- 是否把这些 manifest 归档到 `training/artifacts/runs/archived/`？
+- 它们的 `service_smoke` 评估要不要也一并归档？
+
+建议：进入阶段 1 前**先把它们归档**——它们不在 `legal_window_pressure` 主线，且命名容易和主线混淆。
+
+## 5. 已知的训练风险
+
+按严重度排序：
+
+1. **授权开火密度太低**：`fire_authorized/fire_intent ≈ 1.57%`；Sky City 与 Mist World 的 `no_line_of_sight` 占 68–72%。
+2. **reserve 拆不出原因**：当前 fire_blocked 中 26% 是 `reserved_energy`，但不知道是 dash / shield / 低血 / 投射物威胁哪种主导。
+3. **cover→re-engage 环路缺失**：阶段 1 要看的核心指标。
+4. **8 卡 ≠ MAPPO**：当前 8 卡是 8 个独立 checkpoint 同时跑；league / 同步 learner 路线仍未确定。
+5. **paired eval 缺**：promotion gates 永远过不了 → 候选永远不晋升。
+6. **safety override rate ≈ 7%**：比随机 PPO（1.2%）显著高，模型更积极但触发安全覆盖的频率也高。
+7. **reward 在 dense 段几乎为零**：`damage_dealt=88, kill=6, death=-4, win=1,920`——奖励几乎全来自结局胜利。
+
+## 6. 当前阶段的硬约束
+
+- **历史归档不可作续训对照**：draw-as-win bug 修前数据作废。
+- **不允许自动晋升** checkpoint：catalog 必须显式更新。
+- **不允许 raw-action 训练路径**：已删除；新代码必须用 `tactical_*` 系列。
+- **必须 protocol v2**：feature 142 / mask 7·12·6·6 / 4 head。
+- **隔离运行**：每次跑新实验用独立 GPU、端口、种子、输出目录。
+
+## 7. 接续训练决策表（阶段 0 输出）
+
+进入阶段 1 前，请在文档或 PR 描述里回答：
+
+| 问题 | 答案 |
+|---|---|
+| `git status` 里的 52 个 modified 文件是阶段 1 的输入吗？ | （是 / 否 / 部分） |
+| 3 个"幽灵候选"是否归档？ | （是 / 否） |
+| 是否需要先写"修复 plan" 把未提交改动冻结到 spec？ | （是 / 否） |
+| 阶段 1 的 GPU 用哪一张？ | （推荐 GPU-4，参见 `02-`） |
+| 阶段 1 跑哪个 plan？ | （推荐 `tactical_legal_window_pressure_four_map_ballistic_repair`，参见 `02-`） |
