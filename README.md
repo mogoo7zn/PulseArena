@@ -1,250 +1,234 @@
-# Pulse Arena
+<div align="center">
 
-Pulse Arena is a Godot 4.x 2D top-down projectile arena game and reinforcement-learning environment skeleton. It includes playable human-vs-agent modes, shared action/observation data structures, scripted agents, headless match startup, replay JSONL scaffolding, and focused tests.
+<img src="figs/PulseArena.png" alt="Pulse Arena" width="420"/>
 
-## Implemented
+# ⚡ Pulse Arena
 
-- Godot project structure, Autoload services, input registration, settings persistence, audio bus manager interface.
-- Modernized main menu with left-side world selection, right-side mode setup, four themed vertical-view arena layouts, in-game HUD, private local status cards, pause menu, result screen, and return-to-menu input.
-- 1 Human vs 1 Agent, 1 Human vs 2 Agents, 1 Human vs 3 Agents, and 2 Humans vs 2 Agents configs.
-- Movement, mouse aim, keyboard aim for player 2, projectile fire, dash, shield, health, death, respawn, score, timer.
-- Procedural upright ghost characters with animated cloth/eye highlights, mouth-fire animation, contact shadow, team ring, world health bar, movement/shoot/hit/death/spawn animation states.
-- Projectile cores, short trails, muzzle flashes, wall/player impact audio, generated placeholder SFX, and themed arena rendering with top-down wall thickness, floor textures, spawn pads, and map-specific palettes.
-- Unified `PlayerController` interface with human, scripted, remote, ONNX, and replay controllers.
-- `PlayerAction`, `AgentObservation`, `ObservationBuilder`, `VisibilityFilter`, `RewardCalculator`, `EnvironmentBridge`, `ReplayManager`.
-- Headless startup path for scripted-agent matches.
-- Static smoke test and Godot unit-test entry point.
+**A Godot 4.x 2D top-down projectile arena + reinforcement-learning training skeleton.**
 
-## Not Yet Implemented
+1–4 players · 4 themed arenas · Hybrid Tactical Agent · 5-tier difficulty · web playtest
 
-Full PPO/MAPPO optimizer implementation, vectorized Godot worker IPC, ONNX inference runtime, networking, final authored art/audio assets, deterministic frame-perfect replay, complex weapons, classes, accounts, store, and online multiplayer.
+<br/>
 
-## Requirements
+[![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](LICENSE)
+[![Godot](https://img.shields.io/badge/Godot-4.7-478CBF?logo=godotengine&logoColor=white)](https://godotengine.org/)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Platform](https://img.shields.io/badge/platform-Linux-FCC624?logo=linux&logoColor=black)](#-requirements)
+[![Status](https://img.shields.io/badge/status-active-success.svg)]()
 
-- Ubuntu 24.04 x86_64 or another modern Linux distribution with glibc 2.35+.
-- Godot 4.7 with the Linux export templates installed.
-- Python 3.10+ for tests and training tools; training additionally requires
-  PyTorch, NumPy, and Matplotlib.
-- No external game assets are required.
+</div>
 
-Create the Linux development environment and install training dependencies:
+---
+
+## 📖 What is Pulse Arena?
+
+> Pulse Arena is a lightweight arena prototype aimed at **both gameplay and AI training**: the same engine powers human-vs-agent matches and a hierarchical tactical agent's RL environment. The model only chooses high-level tactical intent — **all low-level movement, predictive aim, fire gating, dodge, and safety fallback are handled by deterministic algorithms in Godot**, so the AI can't "cheat" by learning exploit-shaped actions.
+
+| 🎯 **Pillar** | What it delivers |
+|---|---|
+| 🕹️ **Playable** | Full menu, HUD, pause, results, mixed human/agent matches, 5-tier difficulty |
+| 🧠 **Trainable** | Unified `AgentObservation` / `PlayerAction` / `EnvironmentBridge` interfaces |
+| 🔬 **Auditable** | Hybrid Tactical v2 protocol · mask-aware categorical heads · strict safety-override bookkeeping |
+| 🌐 **Distributable** | WebAssembly playtest + WebSocket ↔ TCP inference bridge |
+
+---
+
+## ✨ Highlights
+
+- 🤖 **Hybrid Tactical Agent** — high-level `target_slot · movement_mode · fire_mode · skill_mode` four masked categorical heads (Protocol v2); low level fully deterministic
+- 🗺️ **4 themed arenas** — Dungeon Keep · Sky City · Jungle Ruins · Mist World (each with its own `MapRuleBase`)
+- 🎮 **4 match modes** — 1v1 · 1v2 · 1v3 · 2v2 (with friendly-fire toggle for 2v2)
+- 🎚️ **5-tier difficulty** — one checkpoint, five strengths (`easy / casual / normal / strong / elite`) via `temperature + mask_soften + safety_threshold`
+- 🧪 **Full test chain** — Godot unit tests + static project check + headless match smoke + end-to-end WebSocket playtest
+- 🌐 **Web playtest** — browser → WebSocket bridge → inference service → `.pt` checkpoint
+- 📊 **Training pipeline** — Protocol v2 BC warm-start → masked tactical PPO/MAPPO → 8-GPU multi-task pilot → candidate gate
+- 🔒 **Privacy & safety** — mist / hidden enemy private state never enters actor features; no raw-action training path; `raw_step_calls > 0` voids the run
+
+---
+
+## 🚀 Quick Start
+
+### 📋 Requirements
+
+- 🐧 Ubuntu 24.04 x86_64 (or any modern Linux with glibc 2.35+)
+- 🎮 Godot 4.7 with Linux export templates (Web export templates for in-browser debugging)
+- 🐍 Python 3.10+ (training additionally requires PyTorch / NumPy / Matplotlib)
+
+### ⬇️ Install
 
 ```bash
-make setup
+make setup                       # creates a venv and installs deps
+export GODOT_BIN=/path/to/godot  # only needed if godot isn't on PATH
 ```
 
-`GODOT_BIN` can point to a non-standard Godot binary. Otherwise the scripts
-resolve `godot4` and then `godot` from `PATH`.
-
-The full Linux setup, CUDA selection, build workflow, and legacy checkpoint
-conversion are documented in [docs/operations/linux.md](docs/operations/linux.md).
-
-## Open And Run
-
-Open this folder in Godot or run:
+### ▶️ Launch the game
 
 ```bash
 godot --path .
 ```
 
-## Modes
+Pick a map, mode, player count and difficulty on the main menu, then start.
 
-The main menu exposes a left-side map selector and a right-side mode setup panel.
+### ⌨️ Controls (Player 1)
 
-Worlds:
+| Key | Action |
+|---|---|
+| <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> | Move |
+| 🖱️ Mouse | Aim |
+| 🖱️ Left-click | Shoot |
+| <kbd>Space</kbd> | Dash |
+| 🖱️ Right-click | Shield |
+| <kbd>Esc</kbd> | Pause / Resume |
+| <kbd>Backspace</kbd> | Return to menu |
 
-- Dungeon Keep: stone halls, cracked tiles, and torchlit cover.
-- Sky City: floating marble platforms, cloud texture, and open sightlines.
-- Jungle Ruins: vine-covered blocks, roots, and overgrown rotation paths.
-- Mist World: fog bands, dark monoliths, and softer distance reading.
+Player 2: `Arrow keys` move · `IJKL` aim · `RCtrl` shoot · `RShift` dash · `Enter` shield.
 
-Modes:
+---
 
-- Human vs 1 Agent
-- Human vs 2 Agents
-- Human vs 3 Agents
-- 2 Humans vs 2 Agents, friendly fire off
+## 🎮 Modes & Arenas
 
-Free-for-all modes use individual scoring. The 2 Humans vs 2 Agents mode uses team rules and hides friendly fire. Debug/training config supports 4 scripted agents through `MatchConfig.preset_training_ffa_agents()`.
+| Mode | Notes |
+|---|---|
+| **1 Human vs 1 Agent** | Classic 1v1 |
+| **1 Human vs 2 Agents** | Outnumbered 1v2 |
+| **1 Human vs 3 Agents** | Outnumbered 1v3 |
+| **2 Humans vs 2 Agents** | 2v2 team, **friendly fire off** |
 
-Respawns are sampled randomly from safe map space at runtime, avoiding walls and dynamic blocking obstacles. Fixed spawn lists remain only as fallback data.
+| Arena | Signature mechanic |
+|---|---|
+| 🏰 **Dungeon Keep** | Cage traps, stone walls, line-of-sight pressure |
+| 🌆 **Sky City** | Moving barriers, void crush zones, high-altitude ballistics |
+| 🌿 **Jungle Ruins** | Swamp slowdown, neutral snakes, camouflage fog-of-war |
+| 🌫️ **Mist World** | Visibility fog, memory-based reasoning, wormhole portals |
 
-## Controls
+> Each map owns a `scripts/arena/map_rules/<id>_rule.gd` so mechanic updates never touch core combat.
 
-Player 1:
+---
 
-- WASD: move
-- Mouse: aim
-- Left mouse: shoot
-- Space: dash
-- Right mouse: shield
-- Esc: pause/resume
-- Backspace or HUD Menu: return to menu during a match
+## 🧠 Agent Architecture (one-liner)
 
-Player 2:
+```text
+AgentObservation (visible state, 142-dim tactical features + 4 action masks)
+  → TacticalPolicyNet (high-level actor-critic)
+  → HighLevelDecision (target · movement · fire · skill)
+  → HybridCombatExecutor (deterministic safe execution)
+  → PlayerAction
+  → ArenaPlayer
+```
 
-- Arrow keys: move
-- IJKL: aim
-- Right Ctrl: shoot
-- Right Shift: dash
-- Enter or Numpad 0: shield
+- **The actor reads only public visible state**; hidden enemy private state never enters features.
+- **Every shot** is gated by LOS / wall / friendly-fire / cooldown / energy-reserve / hit-probability bookkeeping.
+- **Failure fallback** — service disconnect, timeout, NaN, or low-confidence decisions auto-switch to Scripted Hard.
 
-## Settings
+📚 See [`docs/architecture/hybrid-agent.md`](docs/architecture/hybrid-agent.md) and [`docs/agents/interface.md`](docs/agents/interface.md).
 
-The in-menu Settings panel writes to `SettingsManager` and persists in `user://settings.cfg`.
+---
 
-- Video: quality label, particle quality, shadows, screen shake, hit flash, damage numbers flag, reduced motion, frame limit.
-- Audio: master, SFX, and music bus volumes.
-- Controls: mouse sensitivity and gamepad flags in the settings store.
-- Accessibility: high-contrast crosshair, color-blind/team-assist flags, reduced flashing, and health bar size.
+## ⚙️ Headless / Training
 
-## Headless
+### Headless match smoke
 
 ```bash
 godot --headless --path . -- --training --matches=1 --agents=4 --seed=1234 --seconds=10 --map=dungeon
 ```
 
-The current runner starts a single Arena in-process and exits with printed JSON when the match ends. Headless mode sets `config.headless = true`, does not create HUD, combat feedback, particles, or camera shake, and still runs the same physics and combat rules.
-
-Training stages and hardware estimates live under `training/`:
+### Training pipeline entry points
 
 ```bash
-python training/pipeline/run_stage.py --list
-python training/pipeline/run_stage.py --stage 01_foundation_combat
-python training/orchestration/estimate_resources.py
+# Local validation
+python training/pipeline/train_pipeline.py --profile local_constrained --phase validate
+python training/pipeline/train_pipeline.py --profile local_constrained --phase collect
+python training/pipeline/train_pipeline.py --profile local_constrained --phase bc
+
+# 8-GPU multi-task server pilot
+python training/pipeline/train_pipeline.py --profile full_distributed_league --plan hybrid_tactical_v2_8gpu_parallel_pilot --phase ppo-multi
 ```
 
-## Tests
+📚 Full continuation-training roadmap: [`docs/plan/README.md`](docs/plan/README.md).
 
-Static smoke check, works without Godot:
+---
+
+## 🌐 Web Playtest
+
+Push the 5-tier models into the browser and play over SSH:
 
 ```bash
-python tests/smoke/static_project_check.py
+make web-export                  # builds Godot → build/web/
+
+# 1) Inference service
+.venv/bin/python -m training.inference.serve_agent \
+    --catalog training/models/model_catalog.json \
+    --host 0.0.0.0 --port 8766 --device auto
+
+# 2) WebSocket bridge + static file server (loopback only)
+python3 scripts/linux/web_preview_server.py \
+    --directory "$(pwd)/build/web" \
+    --host 127.0.0.1 --port 8080 \
+    --agent-host 127.0.0.1 --agent-port 8766
 ```
 
-Map build smoke check:
+Then open `http://127.0.0.1:8080/` in a browser. For remote SSH hosts, tunnel with `ssh -L 8080:127.0.0.1:8080`.
 
-```bash
-godot --headless --path . --script tests/smoke/map_build_check.gd
+📚 See [`docs/deployment/web-playtest-deployment.md`](docs/deployment/web-playtest-deployment.md).
+
+---
+
+## 🧪 Tests
+
+| Level | Command |
+|---|---|
+| Static check (no Godot needed) | `python tests/smoke/static_project_check.py` |
+| Godot unit tests | `godot --headless --path . --script tests/run_tests.gd` |
+| Full Linux smoke | `make test` |
+| Web end-to-end smoke | `python tests/smoke/web_candidate_playtest_check.py` |
+| Linux release build | `make export-linux` |
+
+---
+
+## 📚 Documentation
+
+| Entry | Contents |
+|---|---|
+| [`docs/README.md`](docs/README.md) | Top-level documentation index |
+| [`docs/architecture/`](docs/architecture/) | Architecture & Hybrid Tactical Agent design |
+| [`docs/agents/`](docs/agents/) | Agent interfaces & model integration |
+| [`docs/game/`](docs/game/) | Gameplay, arenas, skills |
+| [`docs/training/`](docs/training/) | Training strategy, workflow, runbooks |
+| [`docs/plan/`](docs/plan/) | Continuation-training plan (authoritative entry) |
+| [`docs/operations/`](docs/operations/) | Linux workflow & server training bundle |
+| [`docs/paper/`](docs/paper/) | LaTeX paper (main.tex / main.pdf) |
+
+---
+
+## 📦 Repository Layout
+
+```
+PulseArena/
+├── assets/         # art / audio / shaders
+├── scenes/         # Godot scenes (menu, HUD, arena)
+├── scripts/        # GDScript runtime (app / core / arena / rl / ...)
+├── resources/      # balance tables / map data / themes
+├── training/       # Python training stack (pipeline / rl / inference / ...)
+├── tests/          # Godot and Python tests
+├── docs/           # project documentation (Chinese)
+├── figs/           # README promo art
+├── project.godot   # Godot project config
+└── Makefile        # top-level shortcuts
 ```
 
-Godot tests:
+---
 
-```bash
-godot --headless --path . --script tests/run_tests.gd
-```
+## 🤝 Contributing
 
-Complete Linux smoke suite:
+Issues and PRs are welcome. Before opening one, please:
 
-```bash
-make test
-```
+1. Skim [`docs/architecture/overview.md`](docs/architecture/overview.md) and [`docs/operations/project-structure.md`](docs/operations/project-structure.md).
+2. Run `make check` after touching static assets / script paths / key fields.
+3. Run `make test` after touching maps / players / HUD.
+4. Read [`docs/agents/interface.md`](docs/agents/interface.md) before changing AI interfaces.
 
-Build a Linux x86_64 release package:
+---
 
-```bash
-make export-linux
-```
+## 📄 License
 
-## Web 网页调试与预览
-
-先使用安装了 **Web export templates** 的 Godot 4.7 导出；若 Godot 不在
-`PATH`，可像上文一样设置 `GODOT_BIN`。网页预览只监听服务器本机
-`127.0.0.1:8080`，不会暴露训练或推理端口（包括 `8765`、`8766`）。
-
-```bash
-make web-export
-make web-start
-make web-status
-make web-stop
-```
-
-在远程服务器上使用 Cursor Remote SSH 时，无需另建浏览器 SSH 隧道：在已连接
-工作区的 **Ports** 面板转发端口 `8080`，再从本地浏览器打开
-`http://127.0.0.1:8080/`。停止预览时执行 `make web-stop`；该命令只会终止由
-本项目预览脚本记录并验证过的进程。
-
-网页端的开发调试面板默认隐藏。按 **F3** 或使用画布右上角的 **DEBUG** 控件可
-切换它；面板仅显示 FPS、帧耗时、对局状态、地图、剩余时间、玩家/投射物数量和
-最多 50 条公开事件。它不包含训练、推理、控制器、策略、私有能量/储备或冷却数据，
-也不会建立浏览器网络连接；无头和训练对局不会创建该面板。
-
-## Directory Map
-
-- `assets/`: generated and placeholder assets.
-- `scenes/`: app, menu, arena, gameplay, UI, debug scenes.
-- `scripts/app`: startup and scene routing.
-- `scripts/core`: events, flow, input, rules, score, spawn, settings.
-- `scripts/gameplay`: player, projectile, and retained visual helper prototypes.
-- `scripts/gameplay/player.gd`, `projectile.gd`: current runtime character/projectile drawing and animation; kept self-contained so gameplay does not depend on indirect renderer helper chains.
-- `scripts/gameplay/character_animation_controller.gd`, `character_renderer.gd`, `weapon_renderer.gd`, `world_health_bar.gd`, `projectile_renderer.gd`, `combat_feedback_controller.gd`, `camera_effects.gd`: retained prototypes/reference modules; normal gameplay scenes do not instantiate them.
-- `scripts/arena/map_rules`: per-map runtime rules. `dungeon_rule.gd` controls cage traps, `sky_city_rule.gd` controls moving/resizing blockers, `jungle_rule.gd` controls swamp slow zones, and `mist_world_rule.gd` controls fog visibility zones.
-- `scripts/agents/`: hybrid tactical agent — high-level decision (`tactical_decision.gd`) + deterministic low-level execution (fire/cover/movement/stuck/aim solvers).
-- `scripts/controllers`: human/agent/remote/ONNX/replay controller interfaces.
-- `scripts/rl`: action, observation, bridge, reward, training runner, visibility filtering.
-- `scripts/replay`: JSONL replay recorder.
-- `scripts/ops`: shell scripts for environment setup, export, and web preview.
-- `training/`: staged Python training pipeline — `pipeline/`, `rl/`, `inference/`, `evaluation/`, `model_io/`, `orchestration/`, `server_agent/`, `configs/`, `models/`, `data/` (input), `artifacts/` (output).
-- `resources/`: configs, themes, map resources.
-- `tests/`: Godot and static smoke tests.
-- `docs/`: architecture and interface notes.
-- `archive/`: legacy raw-AI artifacts and smoke replays (read-only).
-
-## Agent Interface
-
-All controllers implement:
-
-```gdscript
-func reset() -> void
-func get_action(observation: AgentObservation, delta: float) -> PlayerAction
-```
-
-Add a new scripted agent by subclassing or replacing `ScriptedAgentController`, keeping all decisions outside `ArenaPlayer`.
-
-## Observation And Action
-
-`PlayerAction` serializes movement, aim, shoot, dash, shield, and communication. The action space was kept compatible with the existing controllers.
-
-`AgentObservation` serializes:
-
-- Self private state: health, energy/charge, shoot/dash/shield cooldown ratios, alive/shield/protection flags, score, position, velocity, and aim direction.
-- Other player public state only: relative position/velocity, aim direction, health ratio, teammate flag, alive/shield/dash/protection flags, and validity.
-- Projectile public state: relative position/velocity, owner team relation, lifetime ratio, damage ratio, and validity.
-- Map state: boundary distances, 16 ray samples, map id, and game mode id.
-
-Other characters' exact energy/charge, ammo-like values, reserve values, magazine values, reload timers, internal weapon cooldowns, controller internals, policy state, targets, and pathing are not exposed through HUD or observation. `VisibilityFilter` contains the privacy scan used by tests, and `ObservationBuilder.build_observation_for_actor()` is the single observation entry point.
-
-Scoreboard/result data contains names, human/agent type, team, kills, deaths, score, and alive/public combat state. It does not contain private charge or cooldown values.
-
-## Debug Overlay
-
-`scenes/debug/DebugOverlay.tscn` and `scripts/debug/debug_overlay.gd` are development-only scaffolds. Default gameplay does not show debug data. If a full authoritative-state overlay is added later, keep it separate from normal match HUD and from Agent observation.
-
-## Adding Maps And Modes
-
-Add a scene or map builder under `scenes/arena` / `scripts/arena`, expose wall rects, `is_point_blocked()`, `is_line_blocked()`, `ray_distance()`, and `is_spawn_area_clear()`, then reference it from match setup. Add map-specific live rules under `scripts/arena/map_rules` so timers, durations, radii, and obstacle behavior stay isolated from core combat.
-
-## Hybrid Tactical Training
-
-Recommended entry points:
-
-- `scripts/controllers/hybrid_agent_controller.gd` for protocol v2 tactical decisions.
-- `scripts/agents/*` for deterministic low-level execution.
-- `scripts/rl/environment_bridge.gd` for reset/step/batch observation APIs.
-- `scripts/rl/reward_calculator.gd` for reward shaping.
-- `scripts/controllers/remote_agent_controller.gd` for Python socket or IPC actions.
-- `training/inference/serve_agent.py` for deployed tactical policy inference.
-- `training/rl/tactical_bc_trainer.py` for v2 replay warm starts.
-- `training/configs/training_plans/hybrid_tactical_local.json` for local training.
-- `training/configs/training_plans/hybrid_tactical_full.json` for server training.
-- `training/configs/curriculum.json` for staged training gates.
-- `training/configs/evaluation_matrix.json` for promotion evaluation.
-
-Historical raw-action PPO/BC outputs are archived in `archive/legacy_raw_ai/`.
-
-## Current Known Issues
-
-- Godot CLI validation is available through the commands in the Tests section; direct single-script `--check-only` runs can report false positives for project autoload names, so prefer the project-level smoke commands above.
-- The current SFX are short generated placeholders routed through `AudioManager`; replace them with authored assets through the same event surface.
-- Replay records decision frames but is not frame-perfect playback yet.
-- Current EnvironmentBridge is single-Arena; production training still needs vectorized worker IPC.
+This project is released under the [Apache License 2.0](LICENSE).

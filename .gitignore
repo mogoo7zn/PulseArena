@@ -1,4 +1,8 @@
-# Local Python environments
+# ============================================================
+# Pulse Arena — local artifacts that must NEVER enter the repo
+# ============================================================
+
+# ---- Python environments & caches ----
 .conda/
 .venv/
 venv/
@@ -8,48 +12,58 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .coverage
+.coverage.*
 htmlcov/
 *.egg-info/
+*.orig
 
-# Local configuration and secrets
+# ---- Local configuration & secrets ----
 .env
 .env.*
 !.env.example
 training/configs/local_settings.json
 
-# Local agent and IDE skills/caches
+# ---- Local agent / IDE / tool caches ----
 .agents/
 .claude/
 .gemini/
 .codex/
+.superpowers/
+.worktrees/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
 docs/skills/
 
-# Godot and local tools
+# ---- Godot & local toolchains ----
 .godot/
 .godot_user/
 .tools/
-.superpowers/
-.worktrees/
 training/artifacts/godot_user/
 
-# Generated outputs
+# ---- Generated outputs (build / logs / cache) ----
 dist/
-*.log
-logs/
-tmp/
-test-results/
 build/
+tmp/
+logs/
+test-results/
+*.log
 training/artifacts/packages/
 
-# Training artifacts
+# ---- Training artifacts (large binaries, replays, metrics) ----
 training/artifacts/runs/
-training/swanlab/
 training/artifacts/checkpoints/
+training/swanlab/
 training/data_cache/
 training/eval_results/
 training/data/replays/*
 !training/data/replays/.gitkeep
 training/replays_decision/
+training/data/incoming_models/
+training/data/experiments/
+
+# ---- Model / checkpoint / archive binaries ----
 *.onnx
 *.pt
 *.pth
@@ -60,7 +74,7 @@ training/replays_decision/
 *.tgz
 *.swanlab*
 
-# Archived generated artifacts
+# ---- Archived legacy raw-action AI artifacts (read-only) ----
 archive/**/runs/
 archive/**/replays/
 archive/**/checkpoints/
@@ -71,18 +85,14 @@ archive/**/*.png
 archive/**/*.swanlab*
 archive/**/*.translation
 
-# Editors and operating systems
-.vscode/
-.idea/
-Thumbs.db
-.DS_Store
-
-# LaTeX compilation auxiliary files
+# ---- LaTeX compilation auxiliaries ----
+# keep main.tex / main.pdf / *.bib tracked; only ignore transient build files
 docs/paper/*.aux
 docs/paper/*.bbl
 docs/paper/*.blg
 docs/paper/*.fdb_latexmk
 docs/paper/*.fls
+docs/paper/*.log
 docs/paper/*.out
 docs/paper/*.toc
 docs/paper/*.xdv

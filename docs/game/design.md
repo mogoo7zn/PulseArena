@@ -1,12 +1,27 @@
-# Game Design
+# 玩法设计
 
-Pulse Arena is a 1600 x 900 top-down projectile arena. Combat is built around readable movement, line-of-sight pressure, energy-limited shooting, dash timing, and shield absorption.
+Pulse Arena 是一个 **1600 × 900 的俯视角弹幕竞技场**。战斗围绕"可读的移动、视线压迫、能量受限的射击、冲刺时机、护盾吸收"展开。
 
-Formal modes:
+## 🏟️ 场地
 
-- 1 Human vs 1 Agent
-- 1 Human vs 2 Agents
-- 1 Human vs 3 Agents
-- 2 Humans vs 2 Agents, friendly fire off
+- 中心十字掩体 + 四角 L 形掩体；
+- 8 个出生点；
+- 单局默认 **90 秒**。
 
-Arena Cross provides central cross cover, four corner L covers, eight spawn points, and fixed 90-second rounds.
+## 🎮 正式模式
+
+| 模式 | 说明 |
+|---|---|
+| 1 Human vs 1 Agent | 经典 1v1 |
+| 1 Human vs 2 Agents | 1v2 平衡对抗 |
+| 1 Human vs 3 Agents | 1v3 困难 |
+| 2 Humans vs 2 Agents | 2v2 团战，**关闭友伤** |
+
+> 训练 / Debug 模式可通过 `MatchConfig.preset_training_ffa_agents()` 配置 4 个脚本 Agent 的纯 FFA 调试局。
+
+## 🧩 设计取向
+
+- 移动反馈强、视线读得清——玩家不需要"猜"对手在哪；
+- 能量与子弹是稀缺资源，决定开火比"打得准"更关键；
+- 冲刺与护盾都是短窗口技能，用错代价很大；
+- 道具不会一招翻盘，但能稳定改变小规模交战的节奏。

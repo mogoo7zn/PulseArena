@@ -1,13 +1,13 @@
-# Operations
+# 运维
 
-Local development, Linux workflows, project structure, and server training operations.
+本地开发、Linux 工作流、项目结构与服务器训练运维。
 
-## Primary Entry
+## 📥 主入口
 
-- [Project Structure](project-structure.md)
+- [项目结构](project-structure.md)
 
-## Documents
+## 📚 文档
 
-- [Linux Workflow](linux.md)
-- [Project Structure](project-structure.md)
-- [Server Training Bundle](server-training-bundle.md)
+- [Linux 工作流](linux.md)
+- [项目结构](project-structure.md)
+- [服务器训练包](server-training-bundle.md)

@@ -1,11 +1,12 @@
-# Architecture
+# 架构
 
-Pulse Arena's runtime structure and Hybrid Tactical Agent architecture.
+Pulse Arena 的运行时结构与 Hybrid Tactical Agent 架构说明。
 
-## Primary Entry
+## 📥 主入口
 
-- [Architecture Overview](overview.md)
+- [架构概览](overview.md)
 
-## Documents
+## 📚 文档
 
+- [架构概览](overview.md)
 - [Hybrid Tactical Agent](hybrid-agent.md)

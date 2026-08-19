@@ -1,11 +1,11 @@
-# Design
+# UI 设计
 
-User-facing visual and interaction design references.
+面向玩家的视觉与交互设计参考资料。
 
-## Primary Entry
+## 📥 主入口
 
-- [UI Design](ui.md)
+- [UI 设计](ui.md)
 
-## Documents
+## 📚 文档
 
-- [UI Design](ui.md)
+- [UI 设计](ui.md)

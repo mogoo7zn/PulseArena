@@ -1,11 +1,13 @@
-# UI Design
+# UI 设计
 
-The visual direction is a restrained future arena style:
+整体视觉走"克制未来竞技场"风格：
 
-- dark layered backgrounds,
-- translucent panels,
-- low-saturation blue/cyan/purple accents,
-- compact HUD cards,
-- readable combat-first typography.
+- 🌑 深色分层背景；
+- 🪟 半透明面板；
+- 🎨 低饱和度 **蓝 / 青 / 紫** 强调色；
+- 🧊 紧凑型 HUD 卡片；
+- 🔤 战斗信息优先的字号体系。
 
-Design tokens live in `scripts/ui/ui_tokens.gd`. Main menu and HUD are generated procedurally from scripts to avoid fragile scene nesting while keeping all scene entry points present.
+## 🎨 设计 Token
+
+设计 token 集中在 `scripts/ui/ui_tokens.gd`。主菜单与 HUD 由脚本**程序化生成**，避免脆弱的 Scene 嵌套，同时保留所有 Scene 入口节点以方便扩展。

@@ -1,12 +1,12 @@
-# Game Design
+# 玩法设计
 
-Gameplay rules, player abilities, items, and game-facing design references.
+玩法规则、玩家能力、道具与面向玩家的设计参考资料。
 
-## Primary Entry
+## 📥 主入口
 
-- [Game Design](design.md)
+- [玩法设计](design.md)
 
-## Documents
+## 📚 文档
 
-- [Game Design](design.md)
-- [Skills and Items](skills.md)
+- [玩法设计](design.md)
+- [地面道具与技能清单](skills.md)

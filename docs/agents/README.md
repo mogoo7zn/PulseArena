@@ -1,12 +1,12 @@
-# Agent Interfaces
+# Agent 接口
 
-Agent observation, action, inference, and model integration contracts.
+Agent 观测、动作、推理与模型集成的契约说明。
 
-## Primary Entry
+## 📥 主入口
 
-- [Agent Interface](interface.md)
+- [Agent 接口](interface.md)
 
-## Documents
+## 📚 文档
 
-- [Agent Interface](interface.md)
-- [Model Agent Integration](model-integration.md)
+- [Agent 接口](interface.md)
+- [模型智能体接入说明](model-integration.md)
