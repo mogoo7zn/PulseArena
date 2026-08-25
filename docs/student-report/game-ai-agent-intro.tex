@@ -1,0 +1,247 @@
+\documentclass[aspectratio=169,UTF8,10pt]{ctexbeamer}
+
+\usepackage{tikz}
+\usepackage{booktabs}
+\usepackage{array}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc,fit}
+
+\definecolor{arenaBlue}{HTML}{205B9F}
+\definecolor{arenaTeal}{HTML}{168C86}
+\definecolor{arenaOrange}{HTML}{E17B35}
+\definecolor{arenaRed}{HTML}{C84B4B}
+\definecolor{arenaInk}{HTML}{263445}
+\definecolor{arenaPale}{HTML}{EEF4FA}
+\definecolor{arenaMint}{HTML}{EAF7F4}
+\definecolor{arenaSand}{HTML}{FFF3E8}
+
+\setbeamercolor{normal text}{fg=arenaInk,bg=white}
+\setbeamercolor{frametitle}{fg=arenaBlue}
+\setbeamercolor{structure}{fg=arenaBlue}
+\setbeamercolor{title}{fg=arenaBlue}
+\setbeamercolor{subtitle}{fg=arenaInk}
+\setbeamercolor{footline}{fg=gray}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{\hfill\color{gray}\insertframenumber\,/\,9\hspace{1.2em}\vspace{0.7em}}
+\setbeamertemplate{itemize item}{\color{arenaOrange}$\blacktriangleright$}
+\setbeamertemplate{itemize subitem}{\color{arenaTeal}$\bullet$}
+\setbeamerfont{frametitle}{series=\bfseries,size=\Large}
+\setlength{\parskip}{0.35em}
+
+\tikzset{
+  card/.style={draw=#1, fill=#1!7, rounded corners=3pt, line width=.7pt,
+               minimum height=1.05cm, align=center, inner sep=5pt},
+  card/.default=arenaBlue,
+  flow/.style={-{Latex[length=2.2mm]}, line width=.8pt, draw=arenaInk!75},
+  dashedflow/.style={-{Latex[length=2.2mm]}, line width=.8pt, dashed, draw=arenaOrange},
+  person/.style={circle, draw=arenaBlue, fill=arenaPale, minimum size=.78cm,
+                 font=\large\bfseries, align=center},
+  label/.style={font=\scriptsize, align=center, text=arenaInk}
+}
+
+\newcommand{\keyline}[1]{\par\vspace{0.15em}{\large\color{arenaOrange}\bfseries #1}\par\vspace{0.25em}}
+\newcommand{\tinytitle}[1]{{\color{arenaTeal}\bfseries #1}}
+
+\title{游戏中的电脑对手\\为什么需要 AI Agent？}
+\subtitle{从游戏设计出发，理解“规则”和“智能体”的分工}
+\author{面向人工智能零基础学生的入门汇报}
+\date{\today}
+
+\begin{document}
+
+% 1. Cover
+\begin{frame}
+  \vspace{0.25cm}
+  \titlepage
+  \vspace{-0.4cm}
+  \centering
+  \begin{tikzpicture}[scale=.86]
+    \node[person] (p) at (-3.2,0) {人};
+    \node[person, draw=arenaTeal, fill=arenaMint] (a) at (3.2,0) {AI};
+    \node[draw=arenaOrange, fill=arenaSand, rounded corners=3pt, minimum width=2.5cm,
+          minimum height=.85cm, font=\bfseries] (game) at (0,0) {脉冲竞技场};
+    \draw[flow] (p) -- node[above,label]{移动、瞄准、射击} (game);
+    \draw[flow] (game) -- node[above,label]{挑战、反馈、乐趣} (a);
+  \end{tikzpicture}
+\end{frame}
+
+% 2. Design goals
+\begin{frame}{先别急着谈 AI：一款好玩的对战游戏想做到什么？}
+  \keyline{电脑对手的任务不是“必胜”，而是让每局对战值得再玩一次。}
+  \centering
+  \begin{tikzpicture}[node distance=.48cm]
+    \node[card=arenaBlue, minimum width=3.35cm, minimum height=2.35cm] (fun) {
+      {\Large\bfseries 有趣}\\[.25em]
+      \scriptsize 有变化、有悬念，\newline 不像在完成作业};
+    \node[card=arenaTeal, minimum width=3.35cm, minimum height=2.35cm, right=of fun] (fair) {
+      {\Large\bfseries 公平}\\[.25em]
+      \scriptsize 不偷看玩家位置，\newline 不靠“开挂”取胜};
+    \node[card=arenaOrange, minimum width=3.35cm, minimum height=2.35cm, right=of fair] (fresh) {
+      {\Large\bfseries 可重复}\\[.25em]
+      \scriptsize 新手能上手，高手\newline 也不会很快看穿套路};
+    \node[font=\small\color{arenaInk}, below=.55cm of fair] {游戏设计师要在三者之间不断取平衡。};
+  \end{tikzpicture}
+\end{frame}
+
+% 3. no agent
+\begin{frame}{不用 Agent，电脑对手怎样“思考”？}
+  \keyline{最常见的起点：设计师把经验写成规则，让敌人按条件行动。}
+  \begin{columns}[T,onlytextwidth]
+    \column{.54\textwidth}
+      \centering
+      \begin{tikzpicture}[node distance=.5cm and .34cm, scale=.9, transform shape]
+        \node[card=arenaBlue, minimum width=2.6cm] (see) {读取局面\\\scriptsize 距离、血量、障碍物};
+        \node[card=arenaOrange, minimum width=2.6cm, right=of see] (rule) {判断规则\\\scriptsize “若血少，就撤退”};
+        \node[card=arenaTeal, minimum width=2.6cm, below=of rule] (act) {执行动作\\\scriptsize 寻路、瞄准、开火};
+        \draw[flow] (see) -- (rule);
+        \draw[flow] (rule) -- (act);
+        \draw[dashedflow] (act.west) -| ($(see.south)+(0,-.38)$) -| (see.south);
+      \end{tikzpicture}
+    \column{.42\textwidth}
+      \tinytitle{常用工具}\par
+      \begin{itemize}\small
+        \item \textbf{条件规则}：血量低就找掩体。
+        \item \textbf{状态机}：巡逻、追击、攻击、撤退之间切换。
+        \item \textbf{寻路}：避开墙，找到能到达的位置。
+        \item \textbf{参数}：反应时间、命中率、移动速度决定难度。
+      \end{itemize}
+  \end{columns}
+\end{frame}
+
+% 4. state machine
+\begin{frame}{传统算法像一台可靠的“规则机器”}
+  \keyline{有限状态机：把敌人可能处于的几种状态列清楚，再规定切换条件。}
+  \centering
+  \begin{tikzpicture}[node distance=1.4cm and 2.15cm, every node/.style={font=\small}]
+    \node[card=arenaBlue, minimum width=2.1cm] (patrol) {巡逻\\\scriptsize 没看见玩家};
+    \node[card=arenaOrange, minimum width=2.1cm, right=of patrol] (chase) {追击\\\scriptsize 发现玩家};
+    \node[card=arenaRed, minimum width=2.1cm, right=of chase] (attack) {攻击\\\scriptsize 进入射程};
+    \node[card=arenaTeal, minimum width=2.1cm, below=of chase] (retreat) {撤退\\\scriptsize 血量过低};
+    \draw[flow] (patrol) -- node[above,label]{看见玩家} (chase);
+    \draw[flow] (chase) -- node[above,label]{距离合适} (attack);
+    \draw[flow] (attack) |- node[pos=.25,right,label]{血量低} (retreat);
+    \draw[flow] (retreat) -| node[pos=.76,below,label]{安全 / 恢复} (patrol);
+    \draw[dashedflow] (attack) to[bend right=32] node[below,label]{玩家躲开} (chase);
+  \end{tikzpicture}
+  \vspace{.32cm}
+  \begin{columns}[T,onlytextwidth]
+    \column{.33\textwidth}\centering\textcolor{arenaTeal}{\bfseries 看得懂}\par\scriptsize 每个动作都有明确理由
+    \column{.33\textwidth}\centering\textcolor{arenaTeal}{\bfseries 好调试}\par\scriptsize 出错时能定位哪条规则
+    \column{.33\textwidth}\centering\textcolor{arenaTeal}{\bfseries 成本低}\par\scriptsize 小型或固定关卡很合适
+  \end{columns}
+\end{frame}
+
+% 5. problems
+\begin{frame}{但局面一复杂，规则会越来越像“补丁山”}
+  \keyline{规则方案并不差；问题是它很难覆盖不断变化的玩家与场景。}
+  \begin{columns}[T,onlytextwidth]
+    \column{.56\textwidth}
+      \centering
+      \begin{tikzpicture}[scale=.72, transform shape]
+        \node[card=arenaBlue, minimum width=2.5cm] (root) {看见玩家};
+        \node[card=arenaOrange, minimum width=2.25cm, below left=.65cm and .25cm of root] (near) {距离近};
+        \node[card=arenaOrange, minimum width=2.25cm, below right=.65cm and .25cm of root] (far) {距离远};
+        \node[card=arenaRed, minimum width=1.8cm, below left=.65cm and -.2cm of near] (cover) {有掩体};
+        \node[card=arenaTeal, minimum width=1.8cm, below right=.65cm and -.2cm of near] (open) {无遮挡};
+        \node[card=arenaTeal, minimum width=1.8cm, below left=.65cm and -.2cm of far] (low) {我血量低};
+        \node[card=arenaRed, minimum width=1.8cm, below right=.65cm and -.2cm of far] (high) {我血量高};
+        \draw[flow] (root) -- (near); \draw[flow] (root) -- (far);
+        \draw[flow] (near) -- (cover); \draw[flow] (near) -- (open);
+        \draw[flow] (far) -- (low); \draw[flow] (far) -- (high);
+      \end{tikzpicture}
+    \column{.40\textwidth}
+      \begin{itemize}\small
+        \item 地图、武器、模式一增加，分支成倍增长。
+        \item 玩家会摸清“它总在这里撤退”的套路。
+        \item 新手与高手面对同一脚本，体验常常两头不讨好。
+        \item 设计师花更多时间补例外，而不是创造新乐趣。
+      \end{itemize}
+      \vspace{.25cm}\colorbox{arenaSand}{\parbox{.78\linewidth}{\centering\small \textbf{关键矛盾：}\;提前写死的规则，难以预见所有真实对局。}}
+  \end{columns}
+\end{frame}
+
+% 6 agent loop
+\begin{frame}{AI Agent：把“观察—选择—结果”连成一个闭环}
+  \keyline{Agent 不是魔法；它是在目标约束下，依据局面选择行动，并从结果获得反馈的程序。}
+  \centering
+  \begin{tikzpicture}[node distance=.55cm and .63cm, scale=.93, transform shape]
+    \node[card=arenaBlue, minimum width=2.25cm, minimum height=1.3cm] (obs) {\textbf{观察}\\\scriptsize 可见敌人、血量、地形};
+    \node[card=arenaOrange, minimum width=2.25cm, minimum height=1.3cm, right=of obs] (decide) {\textbf{决策}\\\scriptsize 追击？绕路？保守？};
+    \node[card=arenaTeal, minimum width=2.25cm, minimum height=1.3cm, right=of decide] (action) {\textbf{行动}\\\scriptsize 移动、瞄准、开火};
+    \node[card=arenaRed, minimum width=2.25cm, minimum height=1.3cm, below=of decide] (feedback) {\textbf{反馈}\\\scriptsize 命中、得分、失败原因};
+    \draw[flow] (obs) -- (decide);
+    \draw[flow] (decide) -- (action);
+    \draw[flow] (action.south) |- (feedback.east);
+    \draw[flow] (feedback.west) -| (obs.south);
+  \end{tikzpicture}
+  \vspace{.35cm}
+  \begin{columns}[T,onlytextwidth]
+    \column{.48\textwidth}\centering\colorbox{arenaPale}{\parbox{.91\linewidth}{\centering\small \textbf{训练时}\quad 根据大量对局结果改进策略。}}
+    \column{.48\textwidth}\centering\colorbox{arenaMint}{\parbox{.91\linewidth}{\centering\small \textbf{游戏时}\quad 用已经学到的策略，对当前局面作选择。}}
+  \end{columns}
+\end{frame}
+
+% 7 adaptation
+\begin{frame}{同一张地图，不同玩家，策略也可以不同}
+  \keyline{有价值的不是“更凶”，而是对局面更合适：让挑战跟上玩家，而不让人觉得被针对。}
+  \centering
+  \begin{tikzpicture}[node distance=.45cm and .8cm, scale=.88, transform shape]
+    \node[person] (new) {新};
+    \node[label, below=.12cm of new] {新手：常直线前进};
+    \node[card=arenaTeal, right=of new, minimum width=3.1cm] (gentle) {\textbf{较易策略}\\\scriptsize 保留反应时间，制造可躲开的攻击};
+    \node[person, below=1.25cm of new] (expert) {高};
+    \node[label, below=.12cm of expert] {熟练玩家：会借掩体移动};
+    \node[card=arenaOrange, right=of expert, minimum width=3.1cm] (tactic) {\textbf{战术策略}\\\scriptsize 预判路线，尝试包抄或控制位置};
+    \node[card=arenaBlue, right=1.05cm of gentle, minimum width=2.65cm, minimum height=3.0cm] (agent) {\Large\bfseries Agent\\[.25em]\scriptsize 读取同样的\newline 游戏内可见信息\\[.45em]\scriptsize 选择不同战术意图};
+    \draw[flow] (new) -- (gentle); \draw[flow] (gentle) -- (agent);
+    \draw[flow] (expert) -- (tactic); \draw[flow] (tactic) -- (agent);
+  \end{tikzpicture}
+  \vspace{.12cm}\small\color{gray}注意：公平设计仍要限制 Agent 的信息来源；它不应读取玩家未公开的数据。
+\end{frame}
+
+% 8 hybrid
+\begin{frame}{脚本还是 Agent？最实用的答案常常是“两者合作”}
+  \keyline{让 Agent 负责高层策略，让经过验证的规则负责即时、安全、精确的动作。}
+  \begin{columns}[T,onlytextwidth]
+    \column{.49\textwidth}
+      \centering
+      \begin{tikzpicture}[node distance=.34cm, scale=.82, transform shape]
+        \node[card=arenaBlue, minimum width=4.25cm] (agent) {\textbf{Agent：选战术意图}\\\scriptsize 追谁？进攻还是防守？何时使用技能？};
+        \node[card=arenaTeal, minimum width=4.25cm, below=of agent] (rules) {\textbf{规则执行器：保证动作可靠}\\\scriptsize 寻路、避墙、冷却时间、不可穿墙射击};
+        \node[card=arenaOrange, minimum width=4.25cm, below=of rules] (game) {\textbf{游戏世界}\\\scriptsize 玩家、地图、物理碰撞、胜负规则};
+        \draw[flow] (agent) -- (rules); \draw[flow] (rules) -- (game);
+      \end{tikzpicture}
+    \column{.49\textwidth}
+      \scriptsize
+      \renewcommand{\arraystretch}{1.35}
+      \setlength{\tabcolsep}{3pt}
+      \begin{tabular}{>{\bfseries}p{1.15cm}p{2.15cm}p{2.15cm}}
+        \toprule
+        & \textcolor{arenaBlue}{传统脚本} & \textcolor{arenaTeal}{AI Agent}\\
+        \midrule
+        擅长 & 明确、固定、可控的任务 & 变化多、策略性强的局面\\
+        优点 & 易解释、成本低、稳定 & 不易被完全看穿、可形成多样策略\\
+        风险 & 套路固定、规则膨胀 & 训练成本高、难测试、可能不稳定\\
+        \bottomrule
+      \end{tabular}
+  \end{columns}
+\end{frame}
+
+% 9 conclusion
+\begin{frame}{带走三句话：技术要为游戏体验服务}
+  \centering
+  \vspace{.28cm}
+  \begin{tikzpicture}[node distance=.52cm]
+    \node[card=arenaBlue, minimum width=10.8cm, minimum height=1.05cm] (one) {
+      \textbf{1}\quad 先问玩家需要什么体验，再决定是否需要 AI Agent。};
+    \node[card=arenaTeal, minimum width=10.8cm, minimum height=1.05cm, below=of one] (two) {
+      \textbf{2}\quad 规则、状态机和寻路仍是游戏 AI 的重要基础，不是“落后方案”。};
+    \node[card=arenaOrange, minimum width=10.8cm, minimum height=1.05cm, below=of two] (three) {
+      \textbf{3}\quad Agent 擅长策略选择；好的游戏通常把它和可靠规则结合起来。};
+  \end{tikzpicture}
+  \vspace{.5cm}
+  {\Large\color{arenaBlue}\bfseries AI 的价值，不是替设计师做游戏；\\而是帮助设计师创造更有生命力的对局。}
+  \vfill
+  \small\color{gray}思考题：如果由你设计电脑对手，你会先写哪一条规则？又会把哪一个选择交给 Agent？
+\end{frame}
+
+\end{document}

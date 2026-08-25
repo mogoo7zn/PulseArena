@@ -36,6 +36,9 @@ training/configs/local_settings.json
 Thumbs.db
 docs/skills/
 
+# ---- Onboarding handoff docs (personal walkthrough, not for the repo) ----
+docs/onboarding-from-zero.md
+
 # ---- Godot & local toolchains ----
 .godot/
 .godot_user/
@@ -96,3 +99,5 @@ docs/paper/*.log
 docs/paper/*.out
 docs/paper/*.toc
 docs/paper/*.xdv
+
+archive/
