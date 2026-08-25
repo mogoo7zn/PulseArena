@@ -8,6 +8,9 @@ PREVIEW_PORT="${PREVIEW_PORT:-8080}"
 PREVIEW_STATE_DIR="${PREVIEW_STATE_DIR:-${ROOT}/test-results/web-preview}"
 PID_FILE="${PREVIEW_STATE_DIR}/server.pid"
 LOG_FILE="${PREVIEW_STATE_DIR}/server.log"
+# The child writes here first; only a healthy start promotes it to LOG_FILE,
+# so a failed start can never clobber replacement state at the stable path.
+CHILD_LOG_FILE="${PREVIEW_STATE_DIR}/server.child.log"
 
 owns_preview_pid() {
   local pid="$1"
@@ -105,7 +108,7 @@ start() {
 
   nohup python3 "${ROOT}/scripts/ops/web_preview_server.py" \
     --directory "${PREVIEW_DIRECTORY}" --host "${PREVIEW_HOST}" --port "${PREVIEW_PORT}" \
-    >"${LOG_FILE}" 2>&1 &
+    >"${CHILD_LOG_FILE}" 2>&1 &
   local pid="$!"
   printf '%s\n' "${pid}" > "${PID_FILE}"
 
@@ -125,6 +128,7 @@ start() {
       probed=1
       if health_check "${health_timeout}"; then
         if still_owns_recorded_pid "${pid}"; then
+          mv -f "${CHILD_LOG_FILE}" "${LOG_FILE}"
           printf 'Web preview running at %s (PID %s)\n' "$(preview_url)" "${pid}"
           return 0
         fi
@@ -132,6 +136,7 @@ start() {
       fi
     elif still_owns_recorded_pid "${pid}" && health_check "${health_timeout}" \
       && still_owns_recorded_pid "${pid}"; then
+      mv -f "${CHILD_LOG_FILE}" "${LOG_FILE}"
       printf 'Web preview running at %s (PID %s)\n' "$(preview_url)" "${pid}"
       return 0
     fi
@@ -145,8 +150,10 @@ start() {
   done
 
   echo "Web preview failed its loopback health check; see ${CHILD_LOG_FILE}." >&2
-  # Renew ownership immediately before signalling or clearing state.
-  if still_owns_recorded_pid "${pid}"; then
+  # Always stop our own child on failure. The cmdline check keeps the signal
+  # safe even when the PID record has been replaced by another process, which
+  # would otherwise leave this child orphaned on the loopback port.
+  if owns_preview_pid "${pid}" && kill -0 "${pid}" 2>/dev/null; then
     kill -TERM "${pid}" 2>/dev/null || true
   fi
   clear_state_for_pid "${pid}"
