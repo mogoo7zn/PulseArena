@@ -110,14 +110,27 @@ start() {
   printf '%s\n' "${pid}" > "${PID_FILE}"
 
   local deadline_millis=$(( $(date +%s%3N) + 5000 ))
+  local probed=0
   while :; do
     local remaining_millis=$(( deadline_millis - $(date +%s%3N) ))
     (( remaining_millis > 0 )) || break
     local health_timeout
     health_timeout="$(printf '%d.%03d' $((remaining_millis / 1000)) $((remaining_millis % 1000)))"
-    # Re-check the state ownership directly before probing: another process
-    # could replace the PID record while the child is starting.
-    if still_owns_recorded_pid "${pid}" && health_check "${health_timeout}" \
+    if (( probed == 0 )); then
+      # The first probe must always run, even if the child died on bind, so
+      # that a port held by some other HTTP service can be detected and
+      # distinguished from "no process answered". Subsequent probes keep the
+      # original ownership check so a slow/stuck peer cannot extend the
+      # five-second deadline by forcing extra subprocess startups.
+      probed=1
+      if health_check "${health_timeout}"; then
+        if still_owns_recorded_pid "${pid}"; then
+          printf 'Web preview running at %s (PID %s)\n' "$(preview_url)" "${pid}"
+          return 0
+        fi
+        echo "Web preview port answered, but recorded PID ${pid} is not the preview server." >&2
+      fi
+    elif still_owns_recorded_pid "${pid}" && health_check "${health_timeout}" \
       && still_owns_recorded_pid "${pid}"; then
       printf 'Web preview running at %s (PID %s)\n' "$(preview_url)" "${pid}"
       return 0
@@ -131,7 +144,7 @@ start() {
     fi
   done
 
-  echo "Web preview failed its loopback health check; see ${LOG_FILE}." >&2
+  echo "Web preview failed its loopback health check; see ${CHILD_LOG_FILE}." >&2
   # Renew ownership immediately before signalling or clearing state.
   if still_owns_recorded_pid "${pid}"; then
     kill -TERM "${pid}" 2>/dev/null || true

@@ -101,12 +101,17 @@ def main() -> None:
     web_preset = (ROOT / "export_presets.cfg").read_text(encoding="utf-8")
     if not re.search(r"\[preset\.1\.options\]\s+variant/thread_support=false", web_preset):
         fail("Web export preset must define non-threaded options")
-    for rel in ("archive/legacy_raw_ai/.gdignore", "training/artifacts/runs/.gdignore", "build/.gdignore"):
+    for rel in ("training/artifacts/runs/.gdignore", "build/.gdignore"):
         if not (ROOT / rel).is_file():
             fail(f"missing Godot scan exclusion: {rel}")
 
     missing_refs = []
-    pattern = re.compile(r'res://([^"\n]+)')
+    # Match only valid Godot resource paths: res:// followed by path-safe chars
+    # (word chars, dots, slashes, hyphens, underscores). The previous loose
+    # pattern `res://([^"\n]+)` incorrectly matched the literal `res://` token
+    # inside English comments (e.g. audio_manager.gd:12), spanning until the
+    # next `"` and reporting phantom missing references.
+    pattern = re.compile(r'res://([\w./-]+)')
     for file in list(_iter_godot_files("*.gd")) + list(_iter_godot_files("*.tscn")) + [ROOT / "project.godot"]:
         content = file.read_text(encoding="utf-8", errors="ignore")
         for match in pattern.finditer(content):

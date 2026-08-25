@@ -47,7 +47,8 @@ training/artifacts/godot_user/
 
 # ---- Generated outputs (build / logs / cache) ----
 dist/
-build/
+build/*
+!build/.gdignore
 tmp/
 logs/
 test-results/
@@ -55,7 +56,8 @@ test-results/
 training/artifacts/packages/
 
 # ---- Training artifacts (large binaries, replays, metrics) ----
-training/artifacts/runs/
+training/artifacts/runs/*
+!training/artifacts/runs/.gdignore
 training/artifacts/checkpoints/
 training/swanlab/
 training/data_cache/
